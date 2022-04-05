@@ -2,8 +2,8 @@
 Телеграм интерфейс для управления системкой
 """
 
-from server import Server
-import config
+from server.server import Server
+import server.config as config
 
 import logging
 

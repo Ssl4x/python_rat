@@ -1,5 +1,4 @@
 import socket, json, base64
-from unittest import result
 
 # Set the commands as a 2D array with descriptions for modularity
 commands = [

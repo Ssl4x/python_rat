@@ -7,6 +7,7 @@ import config
 
 import logging
 
+
 from aiogram import Bot, Dispatcher, executor, types
 
 API_TOKEN = config.TELEGRAM_TOKEN
@@ -29,4 +30,8 @@ async def echo(message: types.Message):
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    try:
+        executor.start_polling(dp, skip_updates=True)
+    except Exception:
+        print(Exception)
+        input()

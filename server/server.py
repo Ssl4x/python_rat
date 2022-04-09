@@ -76,8 +76,9 @@ class ManyServers:
                     continue
                 res.append(i.step(command.split()[1:]))
             return res
+        tag = int(tag)
         # проверка наличия подключения с полученным тегом
-        elif self.__servers_ips.get(tag, "no") == "no":
+        if self.__servers_ips.get(tag, "no") == "no":
             return f"exist not connection with name: {tag}"
         # проверка занятости клиента другим запросом
         elif self.__servers_ips[tag][1].in_process:

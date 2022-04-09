@@ -48,7 +48,7 @@ class ManyServers:
         """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
         import config
         # принятие запроса на подключение от клиента
-        server = Server(config.SERVER_IP, config.SERVER_PORT)
+        server = __Server(config.SERVER_IP, config.SERVER_PORT)
         # добавление нового подключения в список всех подключений
         self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
         # повторный вызов для бесконечного мониторинга
@@ -69,7 +69,7 @@ class ManyServers:
         # обработка сценария с тегом all
         if tag == "all":
             for i in self.__servers_ips.values:
-                i: Server = i[1]
+                i: __Server = i[1]
                 # проверка занятости клиента другим запросом
                 if i.in_process:
                     continue
@@ -87,7 +87,7 @@ class ManyServers:
             return res
 
 
-class Server:
+class __Server:
 #public:
     def __init__(self, ip, port):
         self.in_process = False

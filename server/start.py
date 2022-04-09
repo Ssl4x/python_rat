@@ -7,7 +7,6 @@ import os
 from server import ManyServers
 import config as config
 import asyncio
-from multiprocessing import Process
 
 import logging
 
@@ -23,16 +22,19 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-@dp.message_handler(commands=['servers'])
-async def view_all_servers(message: types.Message):
+@dp.message_handler(commands=['clients'])
+async def view_all_clients(message: types.Message):
+    """показывает список доступных подключений"""
     await message.reply(mult.view_all_servers())
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
+    """обработка команд start и help"""
     await message.reply("Интерфейс для управления системкой")
 
 @dp.message_handler()
 async def echo(message: types.Message):
+    """Создание запроса к клиенту"""
     res = await mult.make_command_to_server(message.text)
     if type(res) != str:
         await message.answer_document(open("screen.png", "rb"))
@@ -41,12 +43,14 @@ async def echo(message: types.Message):
         await message.answer(res)
 
 def connection_monitor():
+    """Мониторинг новых подключений"""
     # p = Process(target=mult.add_connection)
     # p.start()
     t = threading.Thread(target=(mult.add_connection), daemon=True)
     t.start()
 
-if __name__ == '__main__':
+def main():
+    """main"""
     loop = asyncio.get_event_loop()
     loop.create_server(ManyServers.add_connection)
     # loop.create_server(ManyServers.view_all_servers)
@@ -57,3 +61,6 @@ if __name__ == '__main__':
     except Exception as er:
         print(er)
         input()
+
+if __name__ == '__main__':
+    main()

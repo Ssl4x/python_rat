@@ -64,15 +64,18 @@ class ManyServers:
     async def make_command_to_server(self, command):
         """Создание запроса к клиенту или клиентам по тегу. Если тег = all, отправляет запрос всем клиентам"""
         # @todo many tags
+        # извлечение тега из сообщения
         tag = command.split()[0]
         # обработка сценария с тегом all
         if tag == "all":
-            for i in self.__servers_ips.values:
+            res = [command[1]]
+            for i in self.__servers_ips.values():
                 i: Server = i[1]
                 # проверка занятости клиента другим запросом
                 if i.in_process:
                     continue
-                i.step()
+                res.append(i.step(command.split()[1:]))
+            return res
         # проверка наличия подключения с полученным тегом
         elif self.__servers_ips.get(tag, "no") == "no":
             return f"exist not connection with name: {tag}"

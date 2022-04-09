@@ -36,9 +36,15 @@ async def send_welcome(message: types.Message):
 async def echo(message: types.Message):
     """Создание запроса к клиенту"""
     res = await mult.make_command_to_server(message.text)
+    if res is None:
+        await message.answer("Nothing")
     if type(res) != str:
-        await message.answer_document(open("screen.png", "rb"))
-        os.remove("screen.png")
+        if res[0] == "screenshot":
+            await message.answer_document(open("screen.png", "rb"))
+            os.remove("screen.png")
+        else:
+            for i in res[1:]:
+                await message.answer(i)        
     else:
         await message.answer(res)
 

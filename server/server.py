@@ -39,8 +39,8 @@ class ManyServers:
     def __add_server_to_count(self):
         i = 0
         while True:
-            if i not in ManyServers.__servers_count:
-                ManyServers.__servers_count.append(i)
+            if i not in self.__servers_count:
+                self.__servers_count.append(i)
                 return i
             i += 1
     

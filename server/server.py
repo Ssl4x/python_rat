@@ -26,49 +26,63 @@ def helpCommand():
     return result
 
 class ManyServers:
+    servers_count = []
     def __init__(self):
         import config
-        self.servers = {}
         server = Server(config.SERVER_IP, config.SERVER_PORT)
-        self.servers.update({server.tag: server})
+        self.servers_ips = {}
+        self.servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
     
-    async def add_connection(self):
+    def __add_server_to_count(self):
+        i = 0
+        while True:
+            if i not in ManyServers.servers_count:
+                ManyServers.servers_count.append(i)
+                return i
+            i += 1
+    
+    def add_connection(self):
         import config
         server = Server(config.SERVER_IP, config.SERVER_PORT)
-        self.servers.update({server.tag: server})
+        print(server.tag)
+        print("server")
+        print("do update", self.servers_ips)
+        self.servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
+        print("posle update", self.servers_ips)
         self.add_connection()
     
-    async def view_all_servers(self):
+    def view_all_servers(self):
         s = ""
-        for i in self.servers.keys:
-            s = s + i + "\n"
-        await s
+        for i in self.servers_ips.keys():
+            print(self.servers_count)
+            s = s + str(i) + ". " + str(self.servers_ips[i][0]) + "\n"
+        return s
     
     async def make_command_to_server(self, command):
-        tag = command.split()[0]
-        if not self.servers.get(tag, "no") == "no":
-            await f"exist not connection with name: {tag}"
-        elif self.servers[tag].in_process:
-            await f"{tag} connection already in process"
+        tag = int(command.split()[0])
+        if self.servers_ips.get(tag, "no") == "no":
+            return f"exist not connection with name: {tag}"
+        elif self.servers_ips[tag][1].in_process:
+            return f"{tag} connection already in process"
         else:
             # @todo all
-            command = command.split()[1]
-            res = self.servers[tag].step(command)
-            await res
+            command = command.split()[1:]
+            res = self.servers_ips[tag][1].step(command)
+            return res
 
 
 class Server:
     def __init__(self, ip, port):
-        self.in_procces = False
+        self.in_process = False
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((ip, port))
         server.listen(0)
         print("[+] Waiting for a connection")
         self.connection, address = server.accept()
-        self.tag = address
+        self.tag = address[0]
         print("[+] Connection received from " + str(address))
-        helpCommand()
+        # helpCommand()
 
     def dataReceive(self):
         jsonData = b""
@@ -132,7 +146,7 @@ class Server:
                 pass
         
     def step(self, command):
-        command = command.split(" ", 1)
+        # command = command.split(" ", 1)
         try:
             if command[0] == "upload":
                 fileContent = self.readFile(command[1]).decode()

@@ -2,10 +2,12 @@
 Телеграм интерфейс для управления системкой
 """
 
+import threading
 import os
 from server import ManyServers
 import config as config
 import asyncio
+from multiprocessing import Process
 
 import logging
 
@@ -15,7 +17,6 @@ from aiogram import Bot, Dispatcher, executor, types
 API_TOKEN = config.TELEGRAM_TOKEN
 
 mult = ManyServers()
-asyncio.run(mult.add_connection())
 
 logging.basicConfig(level=logging.INFO)
 
@@ -32,15 +33,25 @@ async def send_welcome(message: types.Message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    res = mult.make_command_to_server(message.text)
+    res = await mult.make_command_to_server(message.text)
     if type(res) != str:
         await message.answer_document(open("screen.png", "rb"))
         os.remove("screen.png")
     else:
         await message.answer(res)
 
+def connection_monitor():
+    # p = Process(target=mult.add_connection)
+    # p.start()
+    t = threading.Thread(target=(mult.add_connection), daemon=True)
+    t.start()
 
 if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.create_server(ManyServers.add_connection)
+    # loop.create_server(ManyServers.view_all_servers)
+    loop.create_server(ManyServers.make_command_to_server)
+    connection_monitor()
     try:
         executor.start_polling(dp, skip_updates=True)
     except Exception as er:

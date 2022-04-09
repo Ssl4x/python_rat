@@ -34,7 +34,6 @@ class ManyServers:
         # список тегов активных серверов
         self.__servers_count: list[int] = []
         self.__servers_ips = {}
-        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
     
     def __add_server_to_count(self):
         i = 0

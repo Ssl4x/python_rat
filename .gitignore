@@ -3,6 +3,7 @@
 Unittests
 
 # media
+*.jpg
 screen.png
 *.mp4
 

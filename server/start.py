@@ -32,8 +32,8 @@ async def send_welcome(message: types.Message):
     """обработка команд start и help"""
     await message.reply("Интерфейс для управления системкой")
 
-@dp.message_handler()
-async def echo(message: types.Message):
+@dp.message_handler(commands=['client'])
+async def client(message: types.Message):
     """Создание запроса к клиенту"""
     res = await mult.make_command_to_server(message.text)
     if res is None:
@@ -47,6 +47,10 @@ async def echo(message: types.Message):
                 await message.answer(i)        
     else:
         await message.answer(res)
+
+@dp.message_handler(content_types="photo")
+async def client(message:types.Message):
+    await message.reply_photo(message.photo[-1].file_id)
 
 def connection_monitor():
     """Мониторинг новых подключений"""

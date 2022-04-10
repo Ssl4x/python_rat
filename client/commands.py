@@ -31,8 +31,17 @@ def hotkey(keys):
 def sys_command(command):
     """Использует стандартную сиситемную комманду, например peppa.mp4 откроется в видеопроигрователе"""
     # переводит массив слов в строку с коммандой
-    command = ' '.join(command)
-    os.system(command)
+    try:
+        command = ' '.join(command)
+    except Exception as err:
+        print(err)
+        return "Ошибка перевода комманды в клиенте"
+    try:
+        os.system(command)
+        return "команда сработала"
+    except Exception as err:
+        print(err)
+        return "Неправильная комманда"
 
 def restart_pc():
     os.system("shutdown /r /t 1")

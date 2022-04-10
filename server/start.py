@@ -4,6 +4,7 @@
 
 import threading
 import os
+
 from server import ManyServers
 import config as config
 import asyncio
@@ -35,6 +36,8 @@ async def send_welcome(message: types.Message):
 @dp.message_handler(commands=['client'])
 async def client(message: types.Message):
     """Создание запроса к клиенту"""
+    # обрезает команду /client
+    message = message[:1]
     res = await mult.make_command_to_server(message.text)
     if res is None:
         await message.answer("Nothing")

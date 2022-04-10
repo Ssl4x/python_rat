@@ -5,7 +5,8 @@
 import threading
 import os
 
-from server import ManyServers
+# from server.server import ManyServers, help_command
+from server import ManyServers, help_command
 import config as config
 import asyncio
 
@@ -26,18 +27,22 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['clients'])
 async def view_all_clients(message: types.Message):
     """показывает список доступных подключений"""
-    await message.reply(mult.view_all_servers())
+    await message.answer(mult.view_all_servers())
 
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     """обработка команд start и help"""
-    await message.reply("Интерфейс для управления системкой")
+    await message.answer("Интерфейс для управления системкой")
+
+@dp.message_handler(commands=['help'])
+async def help(message: types.Message):
+    await message.answer(help_command())
 
 @dp.message_handler(commands=['client'])
 async def client(message: types.Message):
     """Создание запроса к клиенту"""
     # обрезает команду /client
-    message = message[:1]
+    message.text = message.text[7:]
     res = await mult.make_command_to_server(message.text)
     if res is None:
         await message.answer("Nothing")
@@ -51,9 +56,16 @@ async def client(message: types.Message):
     else:
         await message.answer(res)
 
-@dp.message_handler(content_types="photo")
+@dp.message_handler(content_types="document")
 async def client(message:types.Message):
-    await message.reply_photo(message.photo[-1].file_id)
+    if message.caption == "":
+        await message.reply("необходимо указать тег клиента")
+    else:
+        name = message.document.file_name
+        await message.document.download(destination_file=name)
+        res = await mult.make_command_to_server(message.caption + " drop " + name)
+        os.remove(name)
+        await message.answer(res)
 
 def connection_monitor():
     """Мониторинг новых подключений"""

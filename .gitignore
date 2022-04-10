@@ -1,4 +1,7 @@
 #gitignore
+# tests
+test*.py
+
 # media
 *.mp4
 

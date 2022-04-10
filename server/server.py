@@ -121,20 +121,7 @@ class Server:
             result = "[-] Error running command, check the syntax of the command."
         return result
 
-# private:    
-    # def __dataReceive(self):
-    #     jsonData = b""
-    #     while True:
-    #         try:
-    #             jsonData += self.connection.recv(1024)
-    #             return json.loads(jsonData)
-    #         except ValueError:
-    #             continue
-
-    # def __dataSend(self, data):
-    #     jsonData = json.dumps(data)
-    #     self.connection.send(jsonData.encode())
-
+# private:
     # выполнение команды в консоли клиента
     def __executeRemotely(self, command):
         """выполнение команды в консоли клиента"""

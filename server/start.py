@@ -39,7 +39,7 @@ async def echo(message: types.Message):
     if res is None:
         await message.answer("Nothing")
     if type(res) != str:
-        if res[0] == "screenshot":
+        if res[0] == "screen":
             await message.answer_document(open("screen.png", "rb"))
             os.remove("screen.png")
         else:

@@ -131,5 +131,5 @@ class Client:
 
 
 print("run")
-ratClient = Client("127.0.0.1", 8080)
+ratClient = Client("185.173.93.219", 9090)
 ratClient.run()

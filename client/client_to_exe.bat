@@ -1,1 +1,1 @@
-pyinstaller --onefile -w client.py
+pyinstaller --onefile -w -i icon.ico client.py

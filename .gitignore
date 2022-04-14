@@ -6,6 +6,7 @@ Unittests
 *.jpg
 screen.png
 *.mp4
+*.ico
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

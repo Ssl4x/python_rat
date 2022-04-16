@@ -5,7 +5,7 @@
 import threading
 import os
 
-# from server.server import ManyServers, help_command
+# from server.server import ManyServers, help_command # для подсветки синтаксиса
 from server import ManyServers, help_command
 import config as config
 import asyncio
@@ -42,19 +42,26 @@ async def help(message: types.Message):
 async def client(message: types.Message):
     """Создание запроса к клиенту"""
     # обрезает команду /client
-    message.text = message.text[7:]
-    res = await mult.make_command_to_server(message.text)
-    if res is None:
-        await message.answer("Nothing")
-    if type(res) != str:
-        if res[0] == "screen":
-            await message.answer_document(open("screen.png", "rb"))
-            os.remove("screen.png")
+    try:
+        message.text = message.text[7:]
+        res = await mult.make_command_to_server(message.text)
+        if res is None:
+            await message.answer("Nothing")
+        if type(res) != str:
+            try:
+                if res[0] == "screen":
+                    await message.answer_document(open("screen.png", "rb"))
+                    os.remove("screen.png")
+            except Exception as err:
+                print(err)
+            else:
+                for i in res[1:]:
+                    await message.answer(i)        
         else:
-            for i in res[1:]:
-                await message.answer(i)        
-    else:
-        await message.answer(res)
+            await message.answer(res)
+    except Exception as err:
+        print(err)
+        await message.reply("ошибка при выполнении команды")
 
 @dp.message_handler(content_types="document")
 async def client(message:types.Message):

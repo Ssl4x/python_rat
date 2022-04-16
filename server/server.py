@@ -80,6 +80,7 @@ class ManyServers:
     async def make_command_to_server(self, command):
         """Создание запроса к клиенту(ам) по тегу. Если тег = all, отправляет запрос всем клиентам"""
         # @todo many tags
+        # @todo async execution
         # извлечение тега из сообщения
         try:
             tag = command.split()[0]
@@ -90,11 +91,13 @@ class ManyServers:
         # обработка сценария с тегом all
         if tag == "all":
             res = [command[1]]
+            # проход по всем подключенным клиентам
             for i in self.__servers_ips.values():
                 i: Server = i[1]
                 # проверка занятости клиента другим запросом
                 if i.in_process:
                     continue
+                # добавляет в пул возрата результат выпослнения на одном из клиентов
                 res.append(i.step(command.split()[1:]))
             return res
         try:
@@ -150,7 +153,7 @@ class Server:
             elif command[0] == "clires":
                 return "соединение закрыто"
         except Exception:
-            result = "[-] Error running command, check the syntax of the command."
+            result = "ошибка выполнения команды, проверьте синтаксис"
         return result
 
 # private:

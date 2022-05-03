@@ -68,8 +68,14 @@ async def client(message:types.Message):
     if message.caption == "":
         await message.reply("необходимо указать тег клиента")
     else:
+        # загрузка и сохранение докуманта на сервер для дальнейшей передачи
         name = message.document.file_name
         await message.document.download(destination_file=name)
+        if message.caption.split()[0] == "update":
+            if len(message.caption.split()) == 1:
+                await message.reply("Укажите тег пк, на котором необходимо обновить клиент")
+                return
+            res = await mult.make_command_to_server(message.caption + "update_client" + name)    
         res = await mult.make_command_to_server(message.caption + " drop " + name)
         os.remove(name)
         await message.answer(res)

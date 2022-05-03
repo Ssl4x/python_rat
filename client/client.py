@@ -39,6 +39,7 @@ class Client:
                 pass
             except Exception:
                 print("Подключение зарыто переход в режим ожидания")
+                return
 
 
     def __init__(self, ip, port):

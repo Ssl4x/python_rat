@@ -2,10 +2,14 @@
 Телеграм интерфейс для управления системкой
 """
 
+import warnings
+warnings.filterwarnings("ignore")
+
 import threading
 import os
+from time import sleep
 
-from server import ManyServers, help_command
+from server import ManyServers, help_command, Notificator
 import config as config
 import asyncio
 
@@ -16,16 +20,37 @@ from aiogram import Bot, Dispatcher, executor, types
 
 API_TOKEN = config.TELEGRAM_TOKEN
 
-mult = ManyServers()
-
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
+
+class TelegramNotificator:
+    def make_notification(text: str, *args):
+        for noti_id in config.NOTI_IDS:
+            send_message(noti_id, text)
+            send_fut = asyncio.run_coroutine_threadsafe(send_message(noti_id, args[0]), loop)
+            send_fut.result()
+
+
+async def send_message(id, text):
+    await bot.send_message(id, text)
+
+
+@dp.message_handler(commands=['notification'])
+async def notification_add(message: types.Message):
+    if message.chat.id not in config.NOTI_IDS:
+        config.NOTI_IDS.append(message.chat.id)
+        await message.answer("сообщения будут приходить в этот чат")
+    else:
+        config.NOTI_IDS.pop(config.NOTI_IDS.index(message.chat.id))
+        await message.answer("сообщения больше не будут приходить в этот чат")
+
 @dp.message_handler(commands=['clients'])
 async def view_all_clients(message: types.Message):
     """показывает список доступных подключений"""
+    await send_message(config.NOTI_IDS[0], "text")
     await message.answer(mult.view_all_servers())
 
 @dp.message_handler(commands=['start'])
@@ -80,20 +105,34 @@ async def client(message:types.Message):
         os.remove(name)
         await message.answer(res)
 
-def connection_monitor():
-    """Мониторинг новых подключений"""
-    # p = Process(target=mult.add_connection)
-    # p.start()
-    t = threading.Thread(target=(mult.add_connection), daemon=True)
-    t.start()
+@dp.message_handler(commands=['close_server'])
+async def client(message: types.Message):
+    exit()
+
+# def connection_monitor():
+#     """Мониторинг новых подключений"""
+#     t = threading.Thread(target=(mult.add_connection), daemon=True)
+#     t.start()
+
+# def connection_checker():
+#     """Проверка подключенных клиентов"""
+#     while True:
+#         mult.make_command_to_server("all ping")
+#         sleep(5)
+    
+
+mult = ManyServers(notificator=TelegramNotificator())
+
+loop = asyncio.get_event_loop()
+
 
 def main():
     """main"""
     loop = asyncio.get_event_loop()
-    loop.create_server(ManyServers.add_connection)
     # loop.create_server(ManyServers.view_all_servers)
     loop.create_server(ManyServers.make_command_to_server)
-    connection_monitor()
+    loop.create_server(send_message)
+    # connection_monitor()
     try:
         executor.start_polling(dp, skip_updates=True)
     except Exception as er:

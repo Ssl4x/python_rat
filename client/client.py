@@ -38,7 +38,7 @@ class Client:
             except ValueError:
                 pass
             except Exception:
-                print("Подключение зарыто переход в режим ожидания")
+                print("Подключение зарыто. переход в режим ожидания")
                 restarter(self)
 
 

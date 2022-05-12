@@ -5,6 +5,9 @@ Unittests
 # keylogger
 key_logs.*
 
+# logs
+*logs
+
 # media
 *.jpg
 screen.png

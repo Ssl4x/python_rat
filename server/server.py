@@ -100,6 +100,7 @@ class ManyServers:
         # установление временного лимита, елси он указан в команде
         if "time_limit" in command:
             time_limit = int(command.split("time_limit")[1])
+        tag = command.split()[0]
         def make_command_to_server():
             """Создание запроса к клиенту(ам) по тегу. Если тег = all, отправляет запрос всем клиентам\n
                 many[client_tag_1, client_tag_2, ..., client_tag_n], отправляет запрос нескольким клиентам"""
@@ -116,53 +117,59 @@ class ManyServers:
             # проверка наличия тега клиента
             except IndexError:
                 res = "Укажите тег!"
-                return
+                return res
             # проверка наличия команды для клиента
             if len(command.split()) == 1:
                 res = "Укажите команду!"
-                return
+                return res
+            def one_server(command):
+                nonlocal res
+                nonlocal self
+                nonlocal stop_flag
+                logger.debug(f"make_command_to_server one client, command={command}")
+                tag = command.split()[0]
+                # проверка корректности тега
+                try:
+                    t_tag = int(tag)
+                except ValueError:
+                    res = f"некорректный тег: {t_tag}"
+                    return res
+                # проверка наличия подключения с полученным тегом
+                if self.__servers_ips.get(t_tag, "no") == "no":
+                    res = f"нет подключения с тегом: {t_tag}"
+                    return res
+                # проверка занятости клиента другим запросом
+                elif self.__servers_ips[t_tag][1].in_process:
+                    res = f"{t_tag} клиент занят выполнением другой задачи"
+                    return res
+                # выполнение запроса определенным клиентом
+                else:
+                    command = command.split()[1:]
+                    res = self.__servers_ips[t_tag][1].step(command, stop_flag=stop_flag)
+                    if res == "Клиент отключен -_-":
+                        self.__servers_ips.pop(t_tag)
+                        self.__servers_count.pop(int(t_tag))
+                        res = "соеденение закрыто"
+                    return res
             # обработка сценария с тегом all
             if tag == "all":
-                res = [command[1]]
+                s_res = [command[1]]
                 # проход по всем подключенным клиентам
-                for i in self.__servers_ips.values():
-                    i: Server = i[1]
+                for i in zip(self.__servers_ips.values(), range(len(self.__servers_ips.keys()))):
+                    ser: Server = i[0][1]
                     # проверка занятости клиента другим запросом
-                    if i.in_process:
+                    if ser.in_process:
                         continue
                     # добавляет в пул возрата результат выпослнения на одном из клиентов
-                    res.append(i.step(command.split()[1:], stop_flag=stop_flag))
-                print("возврат из all", res)
-                res = res
+                    s_res.append(one_server(command.replace("all", str(i[1]))))
+                res = s_res
                 return
             # обпаботка сценария с тегом many, который вызывает команду на нескольких клиетах 
             elif tag == "many":
                 pass
             else:
-                logger.debug(f"make_command_to_server one client, command={command}")
-                # проверка корректности тега
-                try:
-                    tag = int(tag)
-                except ValueError:
-                    res = f"некорректный тег: {tag}"
-                    return
-                # проверка наличия подключения с полученным тегом
-                if self.__servers_ips.get(tag, "no") == "no":
-                    res = f"нет подключения с тегом: {tag}"
-                    return
-                # проверка занятости клиента другим запросом
-                elif self.__servers_ips[tag][1].in_process:
-                    res = f"{tag} клиент занят выполнением другой задачи"
-                    return
-                # выполнение запроса определенным клиентом
-                else:
-                    command = command.split()[1:]
-                    res = self.__servers_ips[tag][1].step(command, stop_flag=stop_flag)
-                    if res == "Клиент отключен -_-":
-                        self.__servers_ips.pop(tag)
-                        self.__servers_count.pop(int(tag))
-                        res = "соеденение закрыто"
-                        return
+                one_server(command)
+            
         threading.Thread(target=make_command_to_server).start()
         # ожидание работы
         for i in range(time_limit):
@@ -171,6 +178,7 @@ class ManyServers:
                 break
         stop_flag[0] = True
         if res == "Выполнение не уложилось во временной лимит, однако оно продолжится на клиенте":
+            self.__servers_ips[tag][1].in_process = False
             await asyncio.sleep(2)
         return res
 
@@ -179,7 +187,7 @@ class ManyServers:
     def __connection_checker(self):
         """Проверка подключенных клиентов"""
         while True:
-            res = self.make_command_to_server("all ping")
+            res = asyncio.run(self.make_command_to_server("all ping"))
             sleep(5)
 
     def __add_server_to_count(self):
@@ -231,7 +239,9 @@ class Server:
             elif command[0] == "ls":
                 command[0] = "dir"
             result = self.__executeRemotely(command, stop_flag=stop_flag)
-            if command[0] == "download" and "[-] Error" not in result:
+            if result == "Клиент отключен -_-":
+                return "Клиент отключен -_-"
+            elif command[0] == "download" and "[-] Error" not in result:
                 result = self.__writeFile(command[1], result)
             elif command[0] == "screenshot" and "[-] Error" not in result:
                 result = self.__screenshot(result)
@@ -239,12 +249,13 @@ class Server:
                 result = help_command()
             elif command[0] == "ping":
                 self.in_process = False
-                return time.time() - start_ping_time
+                return str(time.time() - start_ping_time)
             elif command[0] == "clires":
                 self.in_process = False
                 return "Клиент отключен -_-"
         except Exception as err:
             logger.debug(err)
+            print(err)
             result = "ошибка выполнения команды, проверьте синтаксис"
         self.in_process = False
         return result
@@ -292,6 +303,9 @@ class Server:
         except ConnectionResetError:
             # Отключаемся от текущей сессии
             self.connection = None
+            return "Клиент отключен -_-"
+        except Exception:
+            return "Клиент отключен -_-"
 
 
     # Получаем json данные от клиента

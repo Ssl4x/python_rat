@@ -3,8 +3,9 @@ import config
 import wget
 import pyautogui
 import ctypes
-import  subprocess
+import subprocess
 import base64
+import webbrowser
 
 
 __test = config.test()
@@ -24,6 +25,14 @@ def screamer():
         print(err)
         return "невозможно открыть файл скримера"
     return "Скример сработал)"
+
+def open_url(url):
+    """Открывает ссылку в браузере"""
+    try:
+        webbrowser.open(url)
+        return "ссылка открыта"
+    except Exception as err:
+        return f"при открытии ссылки произошла ошибка: {err}"
 
 def hotkey(keys):
     """активирует хоткей"""

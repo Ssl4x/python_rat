@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 import wget
 from os import path
->>>>>>> 760cabc414e30a1821c8f5f8b022f841a234de1a
 __test = False
 def test():
     return __test

